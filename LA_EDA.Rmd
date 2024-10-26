@@ -1,0 +1,102 @@
+---
+title: "LA_EDA"
+output: html_document
+date: "2024-10-26"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
+# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+library(ezids)
+ 
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+**SMART QUESTIONS**
+
+1) Which area of Los Angeles has experienced the highest increase in Theft, Robbery, and Homicide rates from 2010 to the present, and what factors (e.g., population density, economic conditions) might be contributing to this rise? Provide a year-over-year analysis to identify patterns.
+2) How does the distribution of various levels and types of crimes (Theft, Robbery, and Homicide) differ across years of Los Angeles from 2020 to the present, and which has the highest overall crime density?
+3) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
+4) Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the last 2 years?
+
+
+```{r}
+crime = read.csv("/Users/aakashh/Downloads/Crime_Data_from_2020_to_Present.csv")
+head(crime)
+```
+
+```{r}
+nrow(crime)
+ncol(crime)
+```
+
+The dataset contains 28 columns and 986500 rows.
+1) DR_NO - Division of Records Number: Official file number.
+2) Date Rptd - MM/DD/YYYY
+3) DATE OCC - MM/DD/YYYY
+4) TIME OCC - In 24 hour military time
+5) AREA - The LAPD has 21 Community Police Stations referred to as Geographic Areas within the department. These Geographic Areas are sequentially numbered from 1-21.
+6) AREA NAME - The 21 Geographic Areas or Patrol Divisions are also given a name designation that references a landmark or the surrounding community that it is responsible for.
+7) Crm Cd - Indicates the crime committed. Crime Code 1 is the primary and most serious one. Crime Code 2, 3, and 4 are respectively less serious offenses. Lower crime class numbers are more serious.
+8) Crm Desc - Indicates the crime description
+9) Vict Age - Age of victim
+10) Vict Sex - 	F : Female M : Male X : Unknown
+11) Vict Descent - 	Descent Code: A - Other Asian B - Black C - Chinese D - Cambodian F - Filipino G - Guamanian H - Hispanic/Latin/Mexican I - American Indian/Alaskan Native J - Japanese K - Korean L - Laotian O - Other P - Pacific Islander S - Samoan U - Hawaiian V - Vietnamese W - White X - Unknown Z - Asian Indian
+12) Weapon Desc - Defines the Weapon Used Code provided.
+13) Location - Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
+14) LAT - Latitude
+15) LON - Longtitude
+
+
+```{r}
+na_count <- colSums(is.na(crime))
+print("\nNA Count per Column:")
+print(na_count)
+
+
+```
+
+```{r}
+new_crime <- crime[, colSums(is.na(crime)) == 0]
+head(new_crime)
+
+nrow(new_crime)
+ncol(new_crime)
+```
+```{r}
+# Feature Selection based on Smart Questions
+
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", 
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+crime_data <- new_crime[, !(names(new_crime) %in% cols_to_remove)]
+
+
+print("Data after removing unnecessary columns:")
+print(names(crime_data))
+```
+
+```{r}
+
+```
+
