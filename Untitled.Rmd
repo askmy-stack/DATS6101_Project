@@ -1,0 +1,360 @@
+---
+title: "L.A. Crime Scene Investigation: Data-Driven Detectives"
+author: "Neeraj Shashikant Magadum"
+date: "`r Sys.Date()`"
+# date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+  
+```{r init, include=FALSE}
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+library(ezids)
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r q01, echo=T, results='markup'}
+crime <- read.csv("Crime_Data_from_2020_to_Present.csv")
+head(crime)
+summary(crime)
+
+```
+```{r q02, echo=T, results='markup'}
+num_rows <- nrow(crime)
+print(num_rows)
+
+# Get the number of columns
+num_columns <- ncol(crime)
+print(num_columns)
+
+
+# Calculate NA counts and percentages
+na_summary <- data.frame(
+  NA_Count = sapply(crime, function(x) sum(is.na(x))),
+  NA_Percentage = sapply(crime, function(x) mean(is.na(x)) * 100)
+)
+
+# Sort the summary by NA count in descending order
+na_summary <- na_summary[order(-na_summary$NA_Count), ]
+
+# Print the summary
+print(na_summary)
+
+
+
+
+
+```
+
+
+```{r q03, echo=T, results='markup'}
+num_rows <- nrow(crime)
+print(num_rows)
+
+# Get the number of columns
+num_columns <- ncol(crime)
+print(num_columns)
+
+
+# Calculate NA counts and percentages
+na_summary <- data.frame(
+  NA_Count = sapply(crime, function(x) sum(is.na(x))),
+  NA_Percentage = sapply(crime, function(x) mean(is.na(x)) * 100)
+)
+
+# Sort the summary by NA count in descending order
+na_summary <- na_summary[order(-na_summary$NA_Count), ]
+
+# Print the summary
+print(na_summary)
+```
+
+
+```{r q04, echo=T, results='markup'}
+
+#Dropping columns with too much missing data as they may not provide insight into the data.
+
+
+new_crime <- crime
+
+# Remove the specified columns
+columns_to_remove <- c("Weapon Used Cd", "Weapon Desc", "Crm Cd 2", "Crm Cd 3", "Crm Cd 4", "Cross Street", "Premis Desc", "Mocodes", "DR_NO")
+new_crime <- new_crime[, !(names(new_crime) %in% columns_to_remove)]
+
+# View the first few rows of the new data frame
+head(new_crime)
+
+```
+
+
+```{r q05, echo=T, results='markup'}
+
+
+
+
+str(new_crime)
+
+```
+
+
+``` {r q06, echo=T, results='markup'}
+# Rename columns for better clarity and consistency
+colnames(new_crime) <- c(
+  "Date_Reported",          # Clarifies that this column represents the date the incident was reported
+  "Date_Occurred",          # Clarifies that this column represents the date the incident occurred
+  "Time_Occurred",          # Clarifies that this column represents the time the incident occurred
+  "Area_Code",              # Indicates that this column represents a code for different areas
+  "Area_Name",              # Consistently naming with underscores for readability
+  "Report_District_Number", # Expands abbreviations for clarity
+  "Part1_2_Indicator",      # Clarifies that this is an indicator for Part 1 or Part 2 crimes
+  "Crime_Code",             # Expands abbreviations for clarity
+  "Crime_Description",      # Expands abbreviations for clarity
+  "Victim_Age",             # Clarifies that this column represents the victim's age
+  "Victim_Sex",             # Clarifies that this column represents the victim's sex
+  "Victim_Descent",         # Clarifies that this column represents the victim's descent or ethnicity
+  "Premise_Code",           # Expands abbreviations for clarity
+  "Status_Code",            # Adds "Code" to make it clear this is a status indicator
+  "Status_Description",     # Expands abbreviations for clarity
+  "Crime_Code_1",           # Expands abbreviations for clarity
+  "Location",               # Consistently naming with only the first letter capitalized
+  "Latitude",               # Clarifies that this column represents the latitude coordinates
+  "Longitude"               # Clarifies that this column represents the longitude coordinates
+)
+
+# Verify the changes
+head(new_crime)
+
+```
+
+
+``` {r q07, echo=T, results='markup'}
+na_summary <- data.frame(
+  NA_Count = sapply(new_crime, function(x) sum(is.na(x))),
+  NA_Percentage = sapply(new_crime, function(x) mean(is.na(x)) * 100)
+)
+
+# Sort the summary by NA count in descending order
+na_summary <- na_summary[order(-na_summary$NA_Count), ]
+
+# Print the summary
+print(na_summary)
+```
+
+```{r q08, echo=T, results='markup'}
+# Load required libraries
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Read the CSV file
+df <- read_csv("Crime_Data_from_2020_to_Present.csv")
+
+# Display basic information about the dataset
+print(dim(df))
+print(summary(df))
+
+# Check for missing values
+na_counts <- colSums(is.na(df))
+print(na_counts)
+
+# Create a copy of the dataframe
+df_new <- df
+
+# Drop columns with too much missing data
+columns_to_drop <- c("Weapon Used Cd", "Weapon Desc", "Crm Cd 2", "Crm Cd 3", "Crm Cd 4", "Cross Street", "Premis Desc", "Mocodes", "DR_NO")
+df_new <- df_new %>% select(-all_of(columns_to_drop))
+
+# Rename columns for better clarity and consistency
+df_new <- df_new %>% rename(
+  Date_Reported = `Date Rptd`,
+  Date_Occurred = `DATE OCC`,
+  Time_Occurred = `TIME OCC`,
+  Area_Code = AREA,
+  Area_Name = `AREA NAME`,
+  Report_District_Number = `Rpt Dist No`,
+  Part1_2_Indicator = `Part 1-2`,
+  Crime_Code = `Crm Cd`,
+  Crime_Description = `Crm Cd Desc`,
+  Victim_Age = `Vict Age`,
+  Victim_Sex = `Vict Sex`,
+  Victim_Descent = `Vict Descent`,
+  Premise_Code = `Premis Cd`,
+  Status_Code = Status,
+  Status_Description = `Status Desc`,
+  Crime_Code_1 = `Crm Cd 1`,
+  Location = LOCATION,
+  Latitude = LAT,
+  Longitude = LON
+)
+
+# Convert date columns to Date type
+df_new$Date_Reported <- as.Date(df_new$Date_Reported, format = "%m/%d/%Y")
+df_new$Date_Occurred <- as.Date(df_new$Date_Occurred, format = "%m/%d/%Y")
+
+# Extract year and month from Date_Occurred
+df_new$Year <- year(df_new$Date_Occurred)
+df_new$Month <- month(df_new$Date_Occurred)
+
+# Analyze crime trends by year
+crime_by_year <- df_new %>%
+  group_by(Year) %>%
+  summarise(Crime_Count = n())
+
+ggplot(crime_by_year, aes(x = Year, y = Crime_Count)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crime Trends by Year", x = "Year", y = "Number of Crimes")
+
+# Analyze crime trends by month
+crime_by_month <- df_new %>%
+  group_by(Month) %>%
+  summarise(Crime_Count = n())
+
+ggplot(crime_by_month, aes(x = Month, y = Crime_Count)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crime Trends by Month", x = "Month", y = "Number of Crimes")
+
+# Analyze top crime types
+top_crimes <- df_new %>%
+  group_by(Crime_Description) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count)) %>%
+  head(10)
+
+ggplot(top_crimes, aes(x = reorder(Crime_Description, -Count), y = Count)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Top 10 Crime Types", x = "Crime Type", y = "Count")
+
+# Analyze crime distribution by area
+crime_by_area <- df_new %>%
+  group_by(Area_Name) %>%
+  summarise(Crime_Count = n()) %>%
+  arrange(desc(Crime_Count))
+
+ggplot(crime_by_area, aes(x = reorder(Area_Name, -Crime_Count), y = Crime_Count)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Crime Distribution by Area", x = "Area", y = "Number of Crimes")
+
+# Analyze victim age distribution
+ggplot(df_new, aes(x = Victim_Age)) +
+  geom_histogram(binwidth = 5) +
+  labs(title = "Victim Age Distribution", x = "Age", y = "Count")
+
+# Analyze crime occurrence time
+df_new$Hour <- as.numeric(substr(df_new$Time_Occurred, 1, 2))
+ggplot(df_new, aes(x = Hour)) +
+  geom_histogram(binwidth = 1) +
+  labs(title = "Crime Occurrence Time", x = "Hour of Day", y = "Count")
+
+
+library(dplyr)
+library(ggplot2)
+
+# Count the occurrences of each crime type
+crime_type_counts <- df_new %>%
+  count(Crime_Description, sort = TRUE)
+
+# Get the top 10 crimes and sum the rest as "Other"
+top_10_crimes <- crime_type_counts %>%
+  slice_head(n = 10)
+
+other_crimes_count <- crime_type_counts %>%
+  slice(11:n()) %>%
+  summarise(n = sum(n)) %>%
+  mutate(Crime_Description = "Other")
+
+# Combine top 10 and "Other" into one dataframe
+crime_counts <- bind_rows(top_10_crimes, other_crimes_count)
+
+# Calculate percentages
+crime_counts <- crime_counts %>%
+  mutate(percentage = n / sum(n) * 100)
+
+# Create the pie chart
+ggplot(crime_counts, aes(x = "", y = n, fill = Crime_Description)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(legend.position = "right") +
+  scale_fill_brewer(palette = "Set3") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage)), 
+            position = position_stack(vjust = 0.5)) +
+  labs(title = "Proportion of Top 10 Crime Types and Others",
+       fill = "Crime Type")
+
+
+```
+
+
+
+```{r q09, echo=T, results='markup'}
+# Load required libraries
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+# Read the CSV file
+df <- read_csv("Crime_Data_from_2020_to_Present.csv")
+
+# Convert Date_Occurred to Date type and extract year
+df$Date_Occurred <- as.Date(df$Date_Occurred, format = "%m/%d/%Y")
+df$Year <- format(df$Date_Occurred, "%Y")
+
+# Group data by Area_Name (neighborhood) and Year, and count crimes
+crime_counts <- df %>%
+  group_by(Area_Name, Year) %>%
+  summarise(Crime_Count = n())
+
+# Calculate year-over-year percent change in crime counts
+crime_counts <- crime_counts %>%
+  group_by(Area_Name) %>%
+  mutate(Percent_Change = (Crime_Count / lag(Crime_Count) - 1) * 100)
+
+# Identify neighborhoods with the largest increases
+top_increases <- crime_counts %>%
+  filter(!is.na(Percent_Change)) %>%
+  group_by(Area_Name) %>%
+  summarise(Avg_Percent_Change = mean(Percent_Change)) %>%
+  arrange(desc(Avg_Percent_Change)) %>%
+  head(5)
+
+# Analyze crime type consistency for top neighborhoods
+top_neighborhoods <- top_increases$Area_Name
+
+crime_type_proportions <- df %>%
+  filter(Area_Name %in% top_neighborhoods) %>%
+  group_by(Area_Name, Year, Crime_Description) %>%
+  summarise(Count = n()) %>%
+  mutate(Proportion = Count / sum(Count))
+
+# Visualize year-over-year trends for top neighborhoods
+ggplot(crime_counts %>% filter(Area_Name %in% top_neighborhoods), 
+       aes(x = Year, y = Percent_Change, color = Area_Name, group = Area_Name)) +
+  geom_line() +
+  labs(title = "Year-over-Year Crime Rate Change for Top Neighborhoods",
+       x = "Year", y = "Percent Change")
+
+# Visualize crime type mix over time for top neighborhoods
+ggplot(crime_type_proportions, aes(x = Year, y = Proportion, fill = Crime_Description)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~ Area_Name, ncol = 2) +
+  labs(title = "Crime Type Mix Over Time for Top Neighborhoods",
+       x = "Year", y = "Proportion", fill = "Crime Type") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
