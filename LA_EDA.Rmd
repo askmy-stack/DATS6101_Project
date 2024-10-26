@@ -96,7 +96,76 @@ print("Data after removing unnecessary columns:")
 print(names(crime_data))
 ```
 
+``{r}
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Ensure date is in correct format
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+# Identify top 3 crimes overall from 2020 to present
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+# Filter data for top 3 crimes from 2020 onwards
+crime_filtered <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020, Crm.Cd %in% top_crimes$Crm.Cd)
+```
+
+
+
+
 ```{r}
 
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Ensure date is in correct format
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+# Calculate crime counts by year for top 3 crimes in top 5 areas
+crime_counts <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020, 
+         AREA.NAME %in% top_areas$AREA.NAME, 
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
+  summarise(crime_count = n()) %>%
+  ungroup()
+
+# Calculate percent change from 2020 benchmark
+crime_change <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  mutate(
+    benchmark_2020 = crime_count[Year == 2020],
+    percent_change = (crime_count - benchmark_2020) / benchmark_2020 * 100
+  ) %>%
+  ungroup()
+
+# Create a line graph showing percent change from 2020 benchmark for each area
+p <- ggplot(crime_change, aes(x = Year, y = percent_change, color = Crm.Cd.Desc, group = Crm.Cd.Desc)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~ AREA.NAME, ncol = 2) +
+  theme_minimal() +
+  labs(title = "Percent Change in Top 3 Crimes from 2020 Benchmark - Top 5 Areas",
+       x = "Year",
+       y = "Percent Change from 2020",
+       color = "Crime Type") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+print(p)
+
+# Print crime counts and percent changes for each area
+print(crime_change)
 ```
 
