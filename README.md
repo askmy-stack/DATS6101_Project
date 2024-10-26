@@ -7,10 +7,10 @@ The dataset includes detailed information on reported crimes such as crime codes
 Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset containing detailed information on crime incidents.
 
 # SMART Question: - 
-1. Which area of Los Angeles has experienced the highest increase in Theft, Robbery, and Homicide rates from 2010 to the present, and what factors (e.g., population density, economic conditions) might be contributing to this rise? Provide a year-over-year analysis to identify patterns.
-2. How does the distribution of various levels and types of crimes (Theft, Robbery, and Homicide) differ across years of Los Angeles from 2020 to the present, and which has the highest overall crime density? 
+1. Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
+2. How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
 3. How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
-4. Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the last 2 years?
+4. Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the 2 years?
 
 # Dataset Information: - 
 https://catalog.data.gov/dataset/crime-data-from-2020-to-present
