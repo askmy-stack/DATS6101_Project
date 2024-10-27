@@ -31,14 +31,15 @@ options(scientific=T, digits = 3)
 
 **SMART QUESTIONS**
 
-1) Which area of Los Angeles has experienced the highest increase in Theft, Robbery, and Homicide rates from 2010 to the present, and what factors (e.g., population density, economic conditions) might be contributing to this rise? Provide a year-over-year analysis to identify patterns.
-2) How does the distribution of various levels and types of crimes (Theft, Robbery, and Homicide) differ across years of Los Angeles from 2020 to the present, and which has the highest overall crime density?
+1) Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
+2) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
 3) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
 4) Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the last 2 years?
+5) How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
 
 
 ```{r}
-crime = read.csv("/Users/aakashh/Downloads/Crime_Data_from_2020_to_Present.csv")
+crime = read.csv("Crime_Data_from_2020_to_Present.csv")
 head(crime)
 ```
 
@@ -134,6 +135,8 @@ crime_filtered <- crime_data %>%
 
 
 
+Question 5:
+How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
 
 ```{r}
 
@@ -185,79 +188,8 @@ print(crime_change)
 
 
 
-```{r}
-library(dplyr)
-library(ggplot2)
-library(lubridate)
+Question 1
 
-# Ensure date is in correct format
-crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-
-# Calculate crime counts by neighborhood and year
-crime_counts <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020) %>%
-  group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
-  summarise(crime_count = n(), .groups = "drop")
-
-print(crime_counts)
-crime_change <- crime_counts %>%
-  group_by(AREA.NAME, Crm.Cd.Desc) %>%
-  mutate(
-    benchmark_2020 = ifelse(2020 %in% Year, crime_count[Year == 2020], NA),
-    percent_change = ifelse(!is.na(benchmark_2020) & benchmark_2020 > 0,
-                            (crime_count - benchmark_2020) / benchmark_2020 * 100,
-                            NA)
-  ) %>%
-  ungroup()
-
-# Identify top neighborhoods by total crime count
-top_neighborhoods <- crime_counts %>%
-  group_by(AREA.NAME) %>%
-  summarise(total_crimes = sum(crime_count)) %>%
-  arrange(desc(total_crimes)) %>%
-  head(5)
-
-# Create visualization of crime counts by neighborhood
-p1 <- ggplot(crime_counts %>% 
-             filter(AREA.NAME %in% top_neighborhoods$AREA.NAME),
-       aes(x = AREA.NAME, y = crime_count, fill = Crm.Cd.Desc)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Crime Counts by Neighborhood and Type (2020-Present)",
-       x = "Neighborhood",
-       y = "Crime Count",
-       fill = "Crime Type")
-
-# Create visualization of percent changes
-p2 <- ggplot(crime_change %>% 
-             filter(AREA.NAME %in% top_neighborhoods$AREA.NAME),
-       aes(x = Year, y = percent_change, color = Crm.Cd.Desc)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(~AREA.NAME, ncol = 2) +
-  theme_minimal() +
-  labs(title = "Percent Change in Crime Types from 2020 Baseline",
-       x = "Year",
-       y = "Percent Change from 2020",
-       color = "Crime Type") +
-  theme(legend.position = "bottom")
-
-# Print both visualizations
-print(p1)
-print(p2)
-
-# Print summary statistics
-print("Top 5 Neighborhoods by Total Crime Count:")
-print(top_neighborhoods)
-
-print("Year-over-Year Changes:")
-print(crime_change %>% 
-        filter(AREA.NAME %in% top_neighborhoods$AREA.NAME) %>%
-        arrange(AREA.NAME, Crm.Cd.Desc, Year))
-
-
-```
 Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to 2023 with particular attention to demographic factors (race and sex of victims), and what insights can be drawn from Area3's significant increase in crimes?
 
 ```{r}
