@@ -81,6 +81,7 @@ head(new_crime)
 nrow(new_crime)
 ncol(new_crime)
 ```
+
 ```{r}
 # Feature Selection based on Smart Questions
 
@@ -350,3 +351,113 @@ print(summary_table)
 
 
 ```
+```{r}
+head(crime$Date_Reported)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Display the structure to understand the format of the Date column
+str(crime)
+
+# Print the first few entries of the Date_Reported column to check its format
+print(head(crime$Date_Reported))
+
+# Assuming the date is in a column named 'Date_Reported' and format is 'mm/dd/yyyy'
+# You might need to adjust this if the format does not match
+crime$Date.Rptd <- as.Date(crime$Date.Rptd, format="%m/%d/%Y")
+
+# Check if there were any conversion errors
+sum(is.na(crime$Date.Rptd))
+
+# Extract Year, Month, and Day from the Date_Reported
+crime$Year <- year(crime$Date.Rptd)
+crime$Month <- month(crime$Date.Rptd)
+crime$Day <- day(crime$Date.Rptd)
+
+# Summarize total crimes by month and year
+monthly_crime_summary <- crime %>%
+  group_by(Year, Month) %>%
+  summarise(Total_Crimes = n(), .groups = 'drop')
+
+# Plot total crimes by month and year
+mcs <- ggplot(monthly_crime_summary, aes(x = Month, y = Total_Crimes, group = Year, color = as.factor(Year))) +
+  geom_line() +
+  labs(title = "Monthly Crime Trends by Year", x = "Month", y = "Total Crimes") +
+  scale_x_continuous(breaks = 1:12, labels = month.abb)
+
+ggplotly(mcs)
+
+# Analyzing crime types during November and December across all years
+holiday_crimes <- crime %>%
+  filter(Month %in% c(11, 12)) %>%
+  group_by(Year, Crm.Cd.Desc) %>%
+  summarise(Total_Crimes = n(), .groups = 'drop') %>%
+  arrange(Year, desc(Total_Crimes))
+
+# Print the top crime types during holidays
+print(holiday_crimes)
+
+# Plotting top crime types during holiday months
+# Plot with improved label visibility
+top_crime_types <- holiday_crimes %>%
+  group_by(Crm.Cd.Desc) %>%
+  summarise(Total_Crimes = sum(Total_Crimes), .groups = 'drop') %>%
+  top_n(20, Total_Crimes)
+
+# Filter the main data to include only these top crime types
+filtered_crimes <- holiday_crimes %>%
+  filter(Crm.Cd.Desc %in% top_crime_types$Crm.Cd.Desc)
+
+# Plot with top crime types
+fc <- ggplot(filtered_crimes, aes(x = reorder(Crm.Cd.Desc, -Total_Crimes), y = Total_Crimes, fill = as.factor(Year))) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  labs(title = "Top 20 Crime Types During Holidays", x = "Crime Type", y = "Total Crimes") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip()  # This flips the axes to make the plot horizontal
+
+ggplotly(fc)
+```
+
+Seasonal Trends: The first plot, displaying monthly crime trends by year, shows distinct seasonal fluctuations. Typically, crime rates appear to increase during certain months, which might correlate with seasonal activities or societal patterns. Identifying these peaks can help in planning better law enforcement deployment during high-risk times.
+
+Top Crimes During Holidays: The list and plot of top crime types during November and December for each year reveal that certain types of crimes, such as vehicle theft, burglary, and assault, consistently rank high during the holiday seasons. This pattern suggests a need for targeted preventive measures during these periods when specific crimes spike, possibly due to the increased opportunity (with many homes potentially left empty and more retail activity).
+
+```{r}
+# Annual trend of total crimes during November and December
+annual_holiday_crime_trends <- holiday_crimes %>%
+  group_by(Year) %>%
+  summarise(Total_Crimes = sum(Total_Crimes), .groups = 'drop')
+
+ahc <- ggplot(annual_holiday_crime_trends, aes(x = Year, y = Total_Crimes)) +
+  geom_line(group=1, color="blue") +
+  geom_point(color="red") +
+  labs(title = "Annual Holiday Crime Trends", x = "Year", y = "Total Crimes")
+
+ggplotly(ahc)
+
+# Add a day of the week column
+crime$Day_of_Week <- wday(crime$Date.Rptd, label = TRUE, abbr = FALSE)
+
+# Summarize crimes by day of the week during the holiday months
+weekday_holiday_crime_summary <- crime %>%
+  filter(Month %in% c(11, 12)) %>%
+  group_by(Day_of_Week) %>%
+  summarise(Total_Crimes = n(), .groups = 'drop') %>%
+  arrange(Day_of_Week)
+
+dow <- ggplot(weekday_holiday_crime_summary, aes(x = Day_of_Week, y = Total_Crimes, fill = Day_of_Week)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crime Distribution by Day of the Week During Holidays", x = "Day of the Week", y = "Total Crimes")
+
+ggplotly(dow)
+```
+
+Visual Accessibility: The bar chart displaying top 20 crime types during the holidays uses a horizontal layout, making it easier to read and compare the frequency of different crimes. This visualization helps stakeholders quickly identify the most prevalent crimes during the holiday seasons, which could inform public awareness campaigns and policing strategies.
+
+Detailed Examination: The detailed breakdown by crime type, year, and month provides a granular view of crime trends, offering insights not only into the ‘what’ and ‘when’ but potentially the ‘why’ of crime patterns. For instance, understanding that thefts increase during November and December could be linked to the higher volume of shopping and unattended properties during the holiday season.
+
+
