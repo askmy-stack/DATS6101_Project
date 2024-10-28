@@ -425,9 +425,6 @@ fc <- ggplot(filtered_crimes, aes(x = reorder(Crm.Cd.Desc, -Total_Crimes), y = T
 ggplotly(fc)
 ```
 
-Seasonal Trends: The first plot, displaying monthly crime trends by year, shows distinct seasonal fluctuations. Typically, crime rates appear to increase during certain months, which might correlate with seasonal activities or societal patterns. Identifying these peaks can help in planning better law enforcement deployment during high-risk times.
-
-Top Crimes During Holidays: The list and plot of top crime types during November and December for each year reveal that certain types of crimes, such as vehicle theft, burglary, and assault, consistently rank high during the holiday seasons. This pattern suggests a need for targeted preventive measures during these periods when specific crimes spike, possibly due to the increased opportunity (with many homes potentially left empty and more retail activity).
 
 ```{r}
 # Annual trend of total crimes during November and December
@@ -458,6 +455,10 @@ dow <- ggplot(weekday_holiday_crime_summary, aes(x = Day_of_Week, y = Total_Crim
 
 ggplotly(dow)
 ```
+
+Seasonal Trends: The first plot, displaying monthly crime trends by year, shows distinct seasonal fluctuations. Typically, crime rates appear to increase during certain months, which might correlate with seasonal activities or societal patterns. Identifying these peaks can help in planning better law enforcement deployment during high-risk times.
+
+Top Crimes During Holidays: The list and plot of top crime types during November and December for each year reveal that certain types of crimes, such as vehicle theft, burglary, and assault, consistently rank high during the holiday seasons. This pattern suggests a need for targeted preventive measures during these periods when specific crimes spike, possibly due to the increased opportunity (with many homes potentially left empty and more retail activity).
 
 Visual Accessibility: The bar chart displaying top 20 crime types during the holidays uses a horizontal layout, making it easier to read and compare the frequency of different crimes. This visualization helps stakeholders quickly identify the most prevalent crimes during the holiday seasons, which could inform public awareness campaigns and policing strategies.
 
