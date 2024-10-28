@@ -283,24 +283,26 @@ print(crime_change)
 
 
 ```{r}
-# Corrected Statistical Analysis 
+# Load necessary libraries
+library(dplyr)
+library(ggplot2)
 
 # 1. Summary Statistics
 summary_stats <- crime_counts %>%
   group_by(AREA.NAME, Crm.Cd.Desc) %>%
   summarise(
-    mean_count = mean(crime_count),
-    sd_count = sd(crime_count),
-    min_count = min(crime_count),
-    max_count = max(crime_count)
+    mean_count = mean(crime_count, na.rm = TRUE),
+    sd_count = sd(crime_count, na.rm = TRUE),
+    min_count = min(crime_count, na.rm = TRUE),
+    max_count = max(crime_count, na.rm = TRUE),
+    .groups = 'drop'  # This is important to avoid grouped data frame issues
   )
 
 # 2. ANOVA test (corrected)
 anova_test <- aov(crime_count ~ AREA.NAME + Crm.Cd.Desc, data = crime_counts)
-summary(anova_test)
+anova_summary <- summary(anova_test)
 
 # 3. Linear Regression for Trend Analysis
-# Separate regression for each area and crime type
 trend_analysis <- crime_counts %>%
   group_by(AREA.NAME, Crm.Cd.Desc) %>%
   do(model = lm(crime_count ~ Year, data = .))
@@ -312,22 +314,19 @@ yoy_changes <- crime_counts %>%
   mutate(
     prev_year_count = lag(crime_count),
     pct_change = (crime_count - prev_year_count) / prev_year_count * 100
-  )
+  ) %>%
+  ungroup()  # Ungroup to avoid issues in plotting
+
 # Create the visualization
-# Create the visualization with correct color mapping
 ggplot(yoy_changes,
        aes(x = as.factor(Year),
            y = pct_change,
-           fill = AREA.NAME)) +  # Changed to AREA.NAME for better distinction
-  geom_bar(stat = "identity",
-           position = "dodge",
-           width = 0.7) +
-  geom_hline(yintercept = 0,
-             linetype = "dashed",
-             color = "red") +
-  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +  # Separate plots by crime type
+           fill = AREA.NAME)) + 
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +
   theme_minimal() +
-  scale_fill_brewer(palette = "Set2") +  # Using a color-blind friendly palette
+  scale_fill_brewer(palette = "Set2") +
   labs(title = "Year-over-Year Percentage Change in Crime Counts",
        subtitle = "By Area and Crime Type (2020-2023)",
        x = "Year",
@@ -341,31 +340,12 @@ ggplot(yoy_changes,
     strip.text = element_text(size = 10, face = "bold")
   )
 
-# 5. Statistical Visualization
-# Create more robust visualizations
-p1 <- ggplot(crime_counts, aes(x = Year, y = crime_count, color = AREA.NAME)) +
-  geom_line() +
-  geom_point() +
-  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +
-  theme_minimal() +
-  labs(title = "Crime Trends by Type and Area",
-       x = "Year",
-       y = "Crime Count") +
-  theme(legend.position = "bottom")
-
-
 # Print results
 print("Summary Statistics:")
 print(summary_stats)
 
 print("\nANOVA Results:")
-print(summary(anova_test))
-
-print("\nYear-over-Year Changes:")
-print(yoy_changes)
-
-# Display visualization
-print(p1)
+print(anova_summary)
 
 ```
 
