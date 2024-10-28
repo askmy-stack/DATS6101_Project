@@ -100,3 +100,325 @@ print(names(crime_data))
 
 ```
 
+SMART Question 3: - How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
+significant geographic patterns (based on latitude and longitude) associated with specific victim
+groups?
+
+```{r Library Installation, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(cluster)
+library(ggmap)
+```
+
+```{r Path, echo=TRUE}
+summary(crime_data)
+```
+
+```{r Code Chunk-1, echo=TRUE}
+library(dplyr)
+names(crime_data)
+crime_frequency <- crime_data %>%
+summarise(Frequency = n()) %>%
+arrange(desc(Frequency))
+```
+
+```{r Code Chunk-2, echo=TRUE}
+sample_data <- crime_data %>% 
+  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
+  head(20)
+
+sample_data
+```
+
+
+```{r Code Chunk-3, echo=TRUE}
+crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+
+
+
+
+```{r Code Chunk-4, echo=TRUE}
+crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
+                              breaks = c(0, 600, 1200, 1800, 2400), 
+                              labels = c("Night", "Morning", "Afternoon", "Evening"))
+
+crime_data %>%
+  group_by(Vict.Descent, Time_Period) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
+  theme_minimal()
+```
+
+```{r Code Chunk-5, echo=TRUE}
+library(lubridate)
+
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
+
+---
+title: "SMART Question-3 EDA"
+author: "Abhinaysai Kamineni"
+date: "10/20/2024"
+# date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Library Installation, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(cluster)
+library(ggmap)
+```
+
+```{r Code Chunk-1, echo=TRUE}
+summary(crime_data)
+```
+
+```{r Code Chunk-2, echo=TRUE}
+library(dplyr)
+names(crime_data)
+crime_frequency <- crime_data %>%
+summarise(Frequency = n()) %>%
+arrange(desc(Frequency))
+```
+
+```{r Code Chunk-3, echo=TRUE}
+sample_data <- crime_data %>% 
+  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
+  head(20)
+
+sample_data
+```
+
+```{r Code Chunk-4, echo=TRUE}
+crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+```{r Code Chunk-5, echo=TRUE}
+crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
+                              breaks = c(0, 600, 1200, 1800, 2400), 
+                              labels = c("Night", "Morning", "Afternoon", "Evening"))
+
+crime_data %>%
+  group_by(Vict.Descent, Time_Period) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
+  theme_minimal()
+```
+
+```{r Code Chunk-6, echo=TRUE}
+library(lubridate)
+
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
+
+
+```{r Code Chunk-7, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+
+crime_distribution <- crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+ggplot(crime_distribution, aes(x = "", y = Percentage, fill = Vict.Descent)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +  # Convert to pie chart
+  labs(title = "Distribution of Crimes by Victim Descent",
+       fill = "Victim Descent") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+```
+
+```{r Code Chunk-8, echo=TRUE}
+library(ggplot2)
+library(dplyr)
+
+victim_counts <- crime_data %>%
+  count(Vict.Descent)
+
+ggplot(victim_counts, aes(x = Vict.Descent, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Count of Crimes by Victim Descent",
+       x = "Victim Descent",
+       y = "Count of Crimes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+```
+
+```{r Code Chunk-9, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-10, echo=TRUE}
+library(dplyr)
+library(tidyr)
+
+unique_values <- unique(crime_data$Vict.Descent)
+print(unique_values)
+
+relevant_data <- crime_data %>%
+  select(LON, LAT, Vict.Descent)
+
+relevant_data$Vict.Descent <- as.factor(relevant_data$Vict.Descent)
+
+dummy_data <- model.matrix(~ Vict.Descent - 1, data = relevant_data)
+
+combined_data <- cbind(relevant_data[, c("LON", "LAT")], dummy_data)
+
+cor_matrix <- cor(combined_data, use = "pairwise.complete.obs")
+
+
+print(cor_matrix)
+```
+
+```{r Code Chunk-11, echo=TRUE}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+numeric_data <- crime_data[sapply(crime_data, is.numeric)]
+
+corr <- cor(numeric_data, use = "complete.obs")  # use "complete.obs" to handle missing values
+
+corrplot(corr, method = "color", 
+         addCoef.col = "black",      # Add correlation coefficients
+         tl.col = "black",           # Text color for labels
+         tl.srt = 45,                # Rotation of text labels
+         number.cex = 0.9,           # Size of the correlation coefficient text
+         tl.cex = 0.9,               # Size of the text label for variables
+         col = colorRampPalette(c("navy", "white", "firebrick3"))(200), # Refined color palette
+         title = "Correlation Matrix", # Title of the plot
+         mar = c(1,1,2,1),           # Adjusted margins for spacing
+         cl.cex = 0.8,               # Size of the color legend text
+         cl.pos = "r",               # Position of the color legend to the right
+         diag = FALSE)               # Remove diagonal for better clarity
+```
+
+```{r Code Chunk-12, echo=TRUE}
+ggplot(crime_data, aes(x = LON)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Longitude) by Victim Descent", 
+       x = "Longitude", 
+       y = "Density") +
+  theme_minimal()
+
+ggplot(crime_data, aes(x = LAT)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Latitude) by Victim Descent", 
+       x = "Latitude", 
+       y = "Density") +
+  theme_minimal()
+```
+
+```{r Code Chunk-13, echo=TRUE}
+anova_result_1 <- aov(LAT ~ AREA, data = crime_data)
+summary(anova_result_1)
+
+anova_result_2 <- aov(LON ~ AREA, data = crime_data)
+summary(anova_result_2)
+```
+
+```{r Code Chunk-14, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-15, echo=TRUE}
+# Filter data for two specific victim descent groups and non-missing lat/lon values
+geo_subset <- crime_data %>%
+  filter(Vict.Descent %in% c("H", "B"), !is.na(LAT), !is.na(LON))
+
+# Ensure the data has exactly two levels for Vict.Descent
+if (length(unique(geo_subset$Vict.Descent)) == 2) {
+  # T-test for differences in latitude and longitude between the two groups
+  latitude_t_test <- t.test(LAT ~ Vict.Descent, data = geo_subset)
+  longitude_t_test <- t.test(LON ~ Vict.Descent, data = geo_subset)
+  
+  # Display results
+  list(Latitude_Test = latitude_t_test, Longitude_Test = longitude_t_test)
+} else {
+  print("Data does not have exactly 2 groups for Vict.Descent. Please check the filtering.")
+}
+```
+
+
+
+
+
+
+
