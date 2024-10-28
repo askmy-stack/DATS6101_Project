@@ -931,6 +931,76 @@ SMART Question 3: - How does the type or frequency of crimes in Los Angeles vary
 significant geographic patterns (based on latitude and longitude) associated with specific victim
 groups?
 
+```{r}
+# Categorize Time of Day based on 'TIME.OCC'
+crime_data <- crime_data %>%
+  mutate(Time.of.Day = case_when(
+    as.numeric(substr(TIME.OCC, 1, 2)) >= 0 & as.numeric(substr(TIME.OCC, 1, 2)) < 6 ~ "Night",
+    as.numeric(substr(TIME.OCC, 1, 2)) >= 6 & as.numeric(substr(TIME.OCC, 1, 2)) < 12 ~ "Morning",
+    as.numeric(substr(TIME.OCC, 1, 2)) >= 12 & as.numeric(substr(TIME.OCC, 1, 2)) < 18 ~ "Afternoon",
+    TRUE ~ "Evening"
+  ))
+
+# Verify the new column
+head(crime_data[c("TIME.OCC", "Time.of.Day")])
+```
+
+```{r}
+# Define violent and non-violent crime types based on keywords in 'Crm.Cd.Desc'
+violent_keywords <- c("ASSAULT", "ROBBERY", "HOMICIDE", "BATTERY", "MURDER", "SHOOTING", "AGGRAVATED", "STABBING")
+crime_data <- crime_data %>%
+  mutate(Crime.Type = ifelse(grepl(paste(violent_keywords, collapse="|"), toupper(Crm.Cd.Desc)), 
+                             "Violent", "Non-Violent"))
+
+# Verify the new column
+head(crime_data[c("Crm.Cd.Desc", "Crime.Type")])
+```
+```{r}
+# Categorize crimes by season based on 'DATE.OCC'
+crime_data <- crime_data %>%
+  mutate(Season = case_when(
+    month(DATE.OCC) %in% c(12, 1, 2) ~ "Winter",
+    month(DATE.OCC) %in% c(3, 4, 5) ~ "Spring",
+    month(DATE.OCC) %in% c(6, 7, 8) ~ "Summer",
+    TRUE ~ "Fall"
+  ))
+
+# Verify the new column
+head(crime_data[c("DATE.OCC", "Season")])
+```
+
+```{r}
+# Summarize crime counts by Season, Time of Day, and Crime Type
+crime_summary <- crime_data %>%
+  group_by(Season, Time.of.Day, Crime.Type) %>%
+  summarise(crime_count = n(), .groups = 'drop') %>%
+  arrange(desc(crime_count))
+
+# Visualize seasonal crime patterns by time of day
+ggplot(crime_summary, aes(x = Season, y = crime_count, fill = Time.of.Day)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Crime.Type) +
+  labs(title = "Seasonal Crime Patterns by Time of Day",
+       x = "Season", y = "Crime Count", fill = "Time of Day") +
+  theme_minimal()
+```
+```{r}
+# Calculate yearly crime trends for Violent and Non-Violent Crimes
+yearly_trends <- crime_data %>%
+  mutate(Year = year(DATE.OCC)) %>%
+  group_by(Year, Crime.Type) %>%
+  summarise(crime_count = n(), .groups = 'drop') %>%
+  arrange(Year, desc(crime_count))
+
+# Plot Yearly Trends
+ggplot(yearly_trends, aes(x = Year, y = crime_count, color = Crime.Type)) +
+  geom_line(size = 1) +
+  geom_point() +
+  labs(title = "Yearly Crime Trends (Violent vs Non-Violent)",
+       x = "Year", y = "Crime Count", color = "Crime Type") +
+  theme_minimal()
+```
+
 ```{r Library Installation, echo=TRUE}
 library(tidyverse)
 library(ggplot2)
