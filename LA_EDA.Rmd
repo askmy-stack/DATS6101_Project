@@ -134,6 +134,67 @@ top_areas <- crime_summary %>%
 # Filter data for top 3 crimes from 2020 onwards
 crime_filtered <- crime_data %>%
   filter(year(DATE.OCC) >= 2020, Crm.Cd %in% top_crimes$Crm.Cd)
+
+
+# Create separate plots with angled x-axis labels
+p1 <- ggplot(
+  subset(crime_filtered, Crm.Cd.Desc == "BATTERY - SIMPLE ASSAULT"),
+  aes(x = AREA.NAME)
+) +
+  geom_bar(fill = "#4e79a7") +
+  theme_minimal() +
+  labs(
+    title = "BATTERY - SIMPLE ASSAULT Distribution by Area",
+    x = "Area Name",
+    y = "Number of Incidents"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Angled labels
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 40, 20)  # Increased bottom margin for labels
+  )
+
+p2 <- ggplot(
+  subset(crime_filtered, Crm.Cd.Desc == "THEFT OF IDENTITY"),
+  aes(x = AREA.NAME)
+) +
+  geom_bar(fill = "#3d8f7d") +
+  theme_minimal() +
+  labs(
+    title = "THEFT OF IDENTITY Distribution by Area",
+    x = "Area Name",
+    y = "Number of Incidents"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Angled labels
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 40, 20)  # Increased bottom margin for labels
+  )
+
+p3 <- ggplot(
+  subset(crime_filtered, Crm.Cd.Desc == "VEHICLE - STOLEN"),
+  aes(x = AREA.NAME)
+) +
+  geom_bar(fill = "#59a14f") +
+  theme_minimal() +
+  labs(
+    title = "VEHICLE - STOLEN Distribution by Area",
+    x = "Area Name",
+    y = "Number of Incidents"
+  ) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),  # Angled labels
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(20, 20, 40, 20)  # Increased bottom margin for labels
+  )
+
+# Display plots one after another
+print(p1)
+print(p2)
+print(p3)
 ```
 
 
