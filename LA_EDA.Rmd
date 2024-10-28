@@ -423,7 +423,7 @@ crime_data_filtered <- crime_data %>%
 # Create a summary table with year-over-year percentage changes
 crime_summary <- crime_data_filtered %>%
   mutate(Year = year(DATE.OCC)) %>%
-  filter(Year >= 2020) %>%
+  filter(Year %in% c(2020, 2023)) %>%
   group_by(AREA.NAME, Year) %>%
   summarise(crime_count = n(), .groups = "drop") %>%
   group_by(AREA.NAME) %>%
@@ -442,32 +442,11 @@ crime_table <- crime_summary %>%
     names_prefix = "percent_change_"
   )
 
-# Print the table
 kable(crime_table, format = "markdown", digits = 2)
 
 ```
 
-```{r}
 
-library(dplyr)
-library(lubridate)
-
-# Assuming crime_data is your original dataset and DATE.OCC is a date column
-crime_summary <- crime_data %>%
-  mutate(Year = year(DATE.OCC)) %>%
-  filter(Year %in% c(2020, 2023)) %>%
-  group_by(AREA.NAME, Year) %>%
-  summarise(crime_count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = Year, values_from = crime_count) %>%
-  mutate(percent_change = (`2023` - `2020`) / `2020` * 100) %>%
-  arrange(desc(percent_change))
-
-# Print the summary
-print(crime_summary)
-
-
-
-```
 
 
 ```{r}
@@ -497,7 +476,6 @@ top_crimes_by_area <- crime_analysis %>%
   top_n(3, percent_change) %>%
   arrange(AREA.NAME, desc(percent_change))
 
-# Print results
 print(top_crimes_by_area)
 
 ```
@@ -508,7 +486,7 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-# Calculate crime changes by Area, Crime Type, Sex, and Race
+# Crime changes by Area, Crime Type, Sex, and Race
 crime_analysis <- crime_data %>%
   filter(year(DATE.OCC) %in% c(2020, 2023)) %>%
   group_by(AREA.NAME, Crm.Cd.Desc, Vict.Sex, Vict.Descent, Year = year(DATE.OCC)) %>%
@@ -522,7 +500,6 @@ crime_analysis <- crime_data %>%
   ) %>%
   filter(!is.na(percent_change))
 
-# Create multiple visualizations
 
 # 1. Crime Change by Area and Sex
 p1 <- ggplot(crime_analysis, 
@@ -547,13 +524,10 @@ p2 <- ggplot(crime_analysis,
        fill = "Victim Descent")
 
 
-
-
-# Print all plots
 print(p1)
 print(p2)
 
-# Create summary table
+# Summary table
 summary_table <- crime_analysis %>%
   group_by(AREA.NAME, Vict.Sex, Vict.Descent) %>%
   summarise(
@@ -564,8 +538,6 @@ summary_table <- crime_analysis %>%
   arrange(desc(avg_percent_change))
 
 print(summary_table)
-
-
 ```
 
 Question 2
