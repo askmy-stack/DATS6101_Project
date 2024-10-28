@@ -352,6 +352,11 @@ print(summary_table)
 
 ```
 <<<<<<< HEAD
+
+Question 2
+
+How do crime rates fluctuate during the holiday season, particularly in November and December, and what types of crimes predominantly occur during these months? Additionally, how have these patterns evolved over the years?
+
 ```{r}
 head(crime$Date.Rptd)
 ```
