@@ -167,8 +167,6 @@ crime_summary <- crime_data %>%
 top_areas <- crime_summary %>%
   arrange(desc(top3_crime)) %>%
   head(5)
-# Identify top 5 areas with highest counts of top 3 crimes
-
 
 # Filter data for top 3 crimes from 2020 onwards
 crime_filtered <- crime_data %>%
@@ -181,7 +179,7 @@ crime_filtered <- crime_data %>%
 
 ```{r}
 
-# 2. Create top_crimes (2020-2023)
+# 1. Create top_crimes (2020-2023)
 top_crimes <- crime_data %>%
   filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023) %>%
   group_by(Crm.Cd, Crm.Cd.Desc) %>%
@@ -189,7 +187,7 @@ top_crimes <- crime_data %>%
   arrange(desc(count)) %>%
   head(3)
 
-# 3. Create top_areas (2020-2023)
+# 2. Create top_areas (2020-2023)
 top_areas <- crime_data %>%
   filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023) %>%
   group_by(AREA.NAME) %>%
@@ -197,7 +195,7 @@ top_areas <- crime_data %>%
   arrange(desc(count)) %>%
   head(5)
 
-# 4. Create crime_counts with verified column names
+# 3. Create crime_counts with verified column names
 crime_counts <- crime_data %>%
   filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023,
          AREA.NAME %in% top_areas$AREA.NAME,
@@ -205,11 +203,7 @@ crime_counts <- crime_data %>%
   group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
   summarise(crime_count = n(), .groups = 'drop')
 
-# 5. Verify the structure of crime_counts
-print("\nStructure of crime_counts:")
-str(crime_counts)
-
-# 6. Now perform the trend analysis
+# 4. Trend analysis
 trend_analysis <- crime_counts %>%
   group_by(AREA.NAME, Crm.Cd.Desc) %>%
   summarise(
@@ -218,7 +212,7 @@ trend_analysis <- crime_counts %>%
     .groups = 'drop'
   )
 
-# 7. Create visualization
+# 5. Visualization
 p1 <- ggplot(crime_counts,
              aes(x = Year, y = crime_count, color = AREA.NAME)) +
   geom_line() +
@@ -254,10 +248,10 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-# Ensure date is in correct format
+# Date formatting
 crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
 
-# Calculate crime counts by year for top 3 crimes in top 5 areas
+# top 3 crimes in top 5 areas
 crime_counts <- crime_data %>%
 
   filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023,
@@ -267,7 +261,7 @@ crime_counts <- crime_data %>%
   summarise(crime_count = n()) %>%
   ungroup()
 
-# Calculate percent change from 2020 benchmark
+# Percent change from 2020 benchmark
 crime_change <- crime_counts %>%
   group_by(AREA.NAME, Crm.Cd.Desc) %>%
   mutate(
@@ -276,7 +270,7 @@ crime_change <- crime_counts %>%
   ) %>%
   ungroup()
 
-# Create a line graph showing percent change from 2020 benchmark for each area
+# line graph showing percent change from 2020 benchmark for each area
 p <- ggplot(crime_change, aes(x = Year, y = percent_change, color = Crm.Cd.Desc, group = Crm.Cd.Desc)) +
   geom_line() +
   geom_point() +
@@ -293,14 +287,42 @@ p <- ggplot(crime_change, aes(x = Year, y = percent_change, color = Crm.Cd.Desc,
 
 print(p)
 
-# Print crime counts and percent changes for each area
 print(crime_change)
 ```
 
-```{r}
-# Corrected Statistical Analysis Code
+#------------------------------------------------------------------------------
+# YEAR-OVER-YEAR CRIME TREND ANALYSIS (2020-2023)
+#------------------------------------------------------------------------------
 
-# 1. Basic Summary Statistics
+1. Battery - Simple Assault:
+  # - Central shows highest spikes in 2021-2022 (~25%)
+  # - Hollywood shows initial increase then decline
+  # - Pacific maintains moderate, stable increases
+  # - 77th Street shows fluctuating pattern
+
+2. Theft of Identity:
+  # - 77th Street shows dramatic spike in 2022 (~250%)
+  # - Southwest shows significant increase in 2022 (~200%)
+  # - All areas show sharp decline in 2023
+  # - Central shows more moderate increases
+
+3. Vehicle - Stolen:
+  # - Central shows consistent high increases (40% in 2021-2022)
+  # - Hollywood shows decline in 2023
+  # - Pacific and Southwest show moderate increases
+  # - More stable patterns than other crime types
+
+4. Overall Patterns:
+  # - 2022 was peak year for most crimes
+  # - 2023 shows general declining trend
+  # - Central area shows highest volatility
+  # - Different crime types show distinct patterns by area
+
+
+```{r}
+# Corrected Statistical Analysis 
+
+# 1. Summary Statistics
 summary_stats <- crime_counts %>%
   group_by(AREA.NAME, Crm.Cd.Desc) %>%
   summarise(
@@ -394,6 +416,28 @@ print(correlation_matrix)
 print(p1)
 
 ```
+
+Year-over-Year Trends by Crime Type:
+  # Battery - Simple Assault:
+    # - Peak increases in 2021-2022
+    # - Central area showed highest variability
+    # - Hollywood shows declining trend in 2023
+
+  # Theft of Identity:
+    # - Dramatic spike in 2022 (>200% in some areas)
+    # - Consistent decline in 2023 across all areas
+    # - 77th Street shows most stable pattern
+
+  # Vehicle - Stolen:
+    # - Central area shows persistent increase
+    # - Most areas peak in 2021-2022
+    # - Varying patterns of decline in 2023
+
+
+Key Findings for Policy:
+  # - Crime type is stronger predictor than location
+  # - 2022 was peak year for most crime types
+  # - Different crimes show distinct geographic patterns
 
 
 
