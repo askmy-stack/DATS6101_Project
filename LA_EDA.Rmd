@@ -364,17 +364,16 @@ library(lubridate)
 # Display the structure to understand the format of the Date column
 str(crime)
 
-# Print the first few entries of the Date_Reported column to check its format
+# Print the first few entries of the Date.Rptd column to check its format
 print(head(crime$Date.Rptd))
 
-# Assuming the date is in a column named 'Date_Reported' and format is 'mm/dd/yyyy'
-# You might need to adjust this if the format does not match
+# Assuming the date is in a column named 'Date.Rptd' and format is 'mm/dd/yyyy'
 crime$Date.Rptd <- as.Date(crime$Date.Rptd, format="%m/%d/%Y")
 
 # Check if there were any conversion errors
 sum(is.na(crime$Date.Rptd))
 
-# Extract Year, Month, and Day from the Date_Reported
+# Extract Year, Month, and Day from the Date.Rptd
 crime$Year <- year(crime$Date.Rptd)
 crime$Month <- month(crime$Date.Rptd)
 crime$Day <- day(crime$Date.Rptd)
@@ -403,7 +402,6 @@ holiday_crimes <- crime %>%
 print(holiday_crimes)
 
 # Plotting top crime types during holiday months
-# Plot with improved label visibility
 top_crime_types <- holiday_crimes %>%
   group_by(Crm.Cd.Desc) %>%
   summarise(Total_Crimes = sum(Total_Crimes), .groups = 'drop') %>%
