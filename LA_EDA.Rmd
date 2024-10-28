@@ -31,15 +31,14 @@ options(scientific=T, digits = 3)
 
 **SMART QUESTIONS**
 
-1) Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
-2) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
+1) Which area of Los Angeles has experienced the highest increase in Theft, Robbery, and Homicide rates from 2010 to the present, and what factors (e.g., population density, economic conditions) might be contributing to this rise? Provide a year-over-year analysis to identify patterns.
+2) How does the distribution of various levels and types of crimes (Theft, Robbery, and Homicide) differ across years of Los Angeles from 2020 to the present, and which has the highest overall crime density?
 3) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
-4) Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
-5) How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
+4) Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the last 2 years?
 
 
 ```{r}
-crime = read.csv("Crime_Data_from_2020_to_Present.csv")
+crime = read.csv("/Users/aakashh/Downloads/Crime_Data_from_2020_to_Present.csv")
 head(crime)
 ```
 
@@ -99,427 +98,320 @@ print(names(crime_data))
 
 ```{r}
 
-library(dplyr)
+```
+
+SMART Question 3: - How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
+significant geographic patterns (based on latitude and longitude) associated with specific victim
+groups?
+
+```{r Library Installation, echo=TRUE}
+library(tidyverse)
 library(ggplot2)
-library(lubridate)
-
-# Ensure date is in correct format
-crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-
-
-# Identify top 3 crimes overall from 2020 to present
-top_crimes <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020) %>%
-  group_by(Crm.Cd, Crm.Cd.Desc) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count)) %>%
-  head(3)
-crime_summary <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020) %>%
-  group_by(AREA.NAME) %>%
-  summarise(
-    total_crime = n(),
-    top3_crime = sum(Crm.Cd %in% top_crimes$Crm.Cd)
-  ) %>%
-  mutate(top3_pct = top3_crime / total_crime * 100)
-top_areas <- crime_summary %>%
-  arrange(desc(top3_crime)) %>%
-  head(5)
-# Identify top 5 areas with highest counts of top 3 crimes
-
-
-# Filter data for top 3 crimes from 2020 onwards
-crime_filtered <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020, Crm.Cd %in% top_crimes$Crm.Cd)
+library(sf)
+library(cluster)
+library(ggmap)
 ```
 
+```{r Path, echo=TRUE}
+summary(crime_data)
+```
 
-
-Question 5:
-How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
-
-```{r}
-
+```{r Code Chunk-1, echo=TRUE}
 library(dplyr)
-library(ggplot2)
-library(lubridate)
+names(crime_data)
+crime_frequency <- crime_data %>%
+summarise(Frequency = n()) %>%
+arrange(desc(Frequency))
+```
 
-# Ensure date is in correct format
-crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+```{r Code Chunk-2, echo=TRUE}
+sample_data <- crime_data %>% 
+  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
+  head(20)
 
-# Calculate crime counts by year for top 3 crimes in top 5 areas
-crime_counts <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020, 
-         AREA.NAME %in% top_areas$AREA.NAME, 
-         Crm.Cd %in% top_crimes$Crm.Cd) %>%
-  group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
-  summarise(crime_count = n()) %>%
-  ungroup()
+sample_data
+```
 
-# Calculate percent change from 2020 benchmark
-crime_change <- crime_counts %>%
-  group_by(AREA.NAME, Crm.Cd.Desc) %>%
-  mutate(
-    benchmark_2020 = crime_count[Year == 2020],
-    percent_change = (crime_count - benchmark_2020) / benchmark_2020 * 100
-  ) %>%
-  ungroup()
 
-# Create a line graph showing percent change from 2020 benchmark for each area
-p <- ggplot(crime_change, aes(x = Year, y = percent_change, color = Crm.Cd.Desc, group = Crm.Cd.Desc)) +
-  geom_line() +
-  geom_point() +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
-  facet_wrap(~ AREA.NAME, ncol = 2) +
-  theme_minimal() +
-  labs(title = "Percent Change in Top 3 Crimes from 2020 Benchmark - Top 5 Areas",
-       x = "Year",
-       y = "Percent Change from 2020",
-       color = "Crime Type") +
-  theme(legend.position = "bottom",
-        plot.title = element_text(hjust = 0.5, size = 10)) +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```{r Code Chunk-3, echo=TRUE}
+crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
+  theme_minimal()
 
-print(p)
-
-# Print crime counts and percent changes for each area
-print(crime_change)
 ```
 
 
 
-Question 1
-
-Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to 2023 with particular attention to demographic factors (race and sex of victims), and what insights can be drawn from Area3's significant increase in crimes?
-
-```{r}
-
-library(dplyr)
-library(tidyr)
-library(knitr)
-library(lubridate)
-
-# Assuming crime_data is your original dataset and DATE.OCC is a date column
-crime_data_filtered <- crime_data %>%
-  filter(year(DATE.OCC) < 2024)
-
-# Create a summary table with year-over-year percentage changes
-crime_summary <- crime_data_filtered %>%
-  mutate(Year = year(DATE.OCC)) %>%
-  filter(Year >= 2020) %>%
-  group_by(AREA.NAME, Year) %>%
-  summarise(crime_count = n(), .groups = "drop") %>%
-  group_by(AREA.NAME) %>%
-  mutate(
-    previous_year_count = lag(crime_count),
-    yoy_percent_change = (crime_count - previous_year_count) / previous_year_count * 100
-  ) %>%
-  ungroup()
-
-# Create a wide format table
-crime_table <- crime_summary %>%
-  select(AREA.NAME, Year, yoy_percent_change) %>%
-  pivot_wider(
-    names_from = Year,
-    values_from = yoy_percent_change,
-    names_prefix = "percent_change_"
-  )
-
-# Print the table
-kable(crime_table, format = "markdown", digits = 2)
-
-```
-
-```{r}
-
-library(dplyr)
-library(lubridate)
-
-# Assuming crime_data is your original dataset and DATE.OCC is a date column
-crime_summary <- crime_data %>%
-  mutate(Year = year(DATE.OCC)) %>%
-  filter(Year %in% c(2020, 2023)) %>%
-  group_by(AREA.NAME, Year) %>%
-  summarise(crime_count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = Year, values_from = crime_count) %>%
-  mutate(percent_change = (`2023` - `2020`) / `2020` * 100) %>%
-  arrange(desc(percent_change))
-
-# Print the summary
-print(crime_summary)
 
 
 
-```
+```{r Code Chunk-4, echo=TRUE}
+crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
+                              breaks = c(0, 600, 1200, 1800, 2400), 
+                              labels = c("Night", "Morning", "Afternoon", "Evening"))
 
-
-```{r}
-library(dplyr)
-library(lubridate)
-
-# Calculate crime counts and percent change by area and crime type
-crime_analysis <- crime_data %>%
-  filter(year(DATE.OCC) %in% c(2020, 2023), 
-         AREA.NAME %in% top_areas$AREA.NAME) %>%
-  group_by(AREA.NAME, Crm.Cd.Desc, Year = year(DATE.OCC)) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = Year, 
-              values_from = count, 
-              names_prefix = "count_") %>%
-  mutate(
-    percent_change = ((count_2023 - count_2020) / count_2020) * 100,
-    absolute_change = count_2023 - count_2020
-  ) %>%
-  filter(!is.na(percent_change)) %>%
-  arrange(AREA.NAME, desc(percent_change))
-
-# Get top 3 most increased crimes for each area
-top_crimes_by_area <- crime_analysis %>%
-  group_by(AREA.NAME) %>%
-  filter(percent_change > 0) %>%  # Only include increases
-  top_n(3, percent_change) %>%
-  arrange(AREA.NAME, desc(percent_change))
-
-# Print results
-print(top_crimes_by_area)
-
-```
-
-
-```{r}
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-
-# Calculate crime changes by Area, Crime Type, Sex, and Race
-crime_analysis <- crime_data %>%
-  filter(year(DATE.OCC) %in% c(2020, 2023)) %>%
-  group_by(AREA.NAME, Crm.Cd.Desc, Vict.Sex, Vict.Descent, Year = year(DATE.OCC)) %>%
-  summarise(count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = Year, 
-              values_from = count, 
-              names_prefix = "count_") %>%
-  mutate(
-    percent_change = ((count_2023 - count_2020) / count_2020) * 100,
-    absolute_change = count_2023 - count_2020
-  ) %>%
-  filter(!is.na(percent_change))
-
-# Create multiple visualizations
-
-# 1. Crime Change by Area and Sex
-p1 <- ggplot(crime_analysis, 
-       aes(x = AREA.NAME, y = percent_change, fill = Vict.Sex)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Crime Change by Area and Victim Sex (2020-2023)",
-       x = "Area",
-       y = "Percent Change",
-       fill = "Victim Sex")
-
-# 2. Crime Change by Area and Race/Descent
-p2 <- ggplot(crime_analysis, 
-       aes(x = AREA.NAME, y = percent_change, fill = Vict.Descent)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(title = "Crime Change by Area and Victim Descent (2020-2023)",
-       x = "Area",
-       y = "Percent Change",
-       fill = "Victim Descent")
-
-
-
-
-# Print all plots
-print(p1)
-print(p2)
-
-# Create summary table
-summary_table <- crime_analysis %>%
-  group_by(AREA.NAME, Vict.Sex, Vict.Descent) %>%
-  summarise(
-    avg_percent_change = mean(percent_change, na.rm = TRUE),
-    total_crimes_2020 = sum(count_2020, na.rm = TRUE),
-    total_crimes_2023 = sum(count_2023, na.rm = TRUE)
-  ) %>%
-  arrange(desc(avg_percent_change))
-
-print(summary_table)
-
-
-```
-Q4. Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
-
-```{r}
-la_crime <- crime %>%
-  filter(!is.na(Weapon.Used.Cd))
-
-print(la_crime)
-```
-```{r}
-cols_to_remove <- c(
-   "Mocodes", "Rpt.Dist.No", "Part.1.2", "Crm.Cd.2","Crm.Cd.3","Crm.Cd.4",
-  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
-)
-
-# Drop the specified columns
-la_crime<- la_crime[, !(names(la_crime) %in% cols_to_remove)]
-```
-
-```{r}
-la_crime <- la_crime %>% rename(
-  Division_NO = 'DR_NO',
-  Date_Reported = 'Date.Rptd',
-  Date_Occurred = 'DATE.OCC',
-  Time_Occurred = 'TIME.OCC',
-  Area_Code = 'AREA',
-  Area_Name = 'AREA.NAME',
-  Crime_Code = 'Crm.Cd',
-  Crime_Description = 'Crm.Cd.Desc',
-  Weapons_Used='Weapon.Used.Cd',    
-  Weapons_Description='Weapon.Desc',
-  Victim_Age = 'Vict.Age',
-  Victim_Sex = 'Vict.Sex',
-  Victim_Descent = 'Vict.Descent',
-  Crime_Code_1 = 'Crm.Cd',
-  Location = 'LOCATION',
-  Latitude = 'LAT',
-  Longitude = 'LON'
-)
-
-print("Data after removing unnecessary columns:")
-print(names(la_crime))
-```
-```{r}
-# Count occurrences of "H" in the Victim_Sex column
-count_H <- sum(la_crime$Victim_Sex == "H", na.rm = TRUE)
-
-# Print the result
-print(count_H)
-
-# Remove rows where Victim_Sex is "H"
-la_crime <- la_crime %>%
-  filter(Victim_Sex != "H")
-
-# Print the result to verify
-nrow(la_crime)
-```
-
-
-
-```{r}
-# Summarize and find top 5 crimes with weapon usage
-top_crimes <- la_crime %>%
-  group_by(Crime_Description, Weapons_Description) %>%
-  summarise(count = n(), .groups = 'drop') %>%
-  arrange(desc(count)) %>%
-  slice_head(n = 10) 
-
-print(top_crimes)
-```
-
-```{r}
-
-# Calculate percentages
-top_crimes <- top_crimes %>%
-  mutate(percentage = count / sum(count) * 100)
-
-# Create a pie chart
-ggplot(top_crimes, aes(x = "", y = count, fill = Crime_Description)) +
-  geom_bar(width = 1, stat = "identity") +
-  coord_polar("y") +
-  labs(title = "Distribution of Weapon Usage by Crime Description") +
-  theme_void() +
-  theme(legend.position = "right")
-  geom_text(aes(label = paste0(round(percentage, 1), "%")), 
-            position = position_stack(vjust = 0.5), 
-            color = "white")
-
-```
-
-
-```{r}
-weapons_sum <- la_crime %>%
-  group_by(Victim_Sex, Victim_Descent, Weapons_Description,Crime_Description) %>%
-  summarize(total_count = n(), .groups = 'drop') %>%
-  top_n(20, total_count) %>%
-  arrange(desc(total_count)) 
-
-weapons_sum
-```
-
-```{r}
- custom_labels <- c("Hand Gun", "Strong Arm", "Verbal Threat")
-  ggplot(weapons_sum, aes(x = Weapons_Description, y = total_count, fill = Victim_Sex)) +
-    geom_bar(stat = "identity") +
-    facet_wrap(~ Victim_Descent) +  # Separate panels for each descent
-    labs(title = "Total Weapons Used by Victim Sex and Descent",
-         x = "Weapon Description",
-         y = "Total Count") +
-    scale_x_discrete(labels = custom_labels) +
-    scale_y_continuous(limits = c(0, max(weapons_sum$total_count) * 1.1)) +
-    theme_minimal() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-Analysis
-1) Hand Gun usage is notably higher for Black (B) and Hispanic (H) victims, with males being disproportionately represented. Strong Arm (physical force) incidents are more frequent for White (W) victims, with a balanced representation of both male and female victims.
-
-2) Across all categories, males (teal) are more frequently victims, especially in cases involving firearms.
-Female victims (red) appear more frequently in non-weapon-based incidents such as Strong Arm cases (e.g., assaults).
-
-3) Hispanic (H) victims have a high rate of gun-related incidents involving male victims. White (W) victims show a high count for Strong Arm incidents, with females almost matching male victims. Other (O) group mainly experiences incidents involving Strong Arm, with no significant firearm usage.
-
-4) This visualization suggests that firearms are predominantly involved in incidents affecting Black and Hispanic males. Meanwhile, physical force is more common among White victims. Gender-based victimization patterns are also evident, with men more frequently involved in firearm-related incidents, whereas women are more often victims in physical confrontations.
-
-```{r}
-# Total crimes by sex and ethnicity
-total_crimes_by_sex_ethnicity <- la_crime %>%
-  filter(!is.na(Victim_Sex) & !is.na(Victim_Descent)) %>% 
-  group_by(Victim_Sex, Victim_Descent) %>%
-  summarise(total_count = n(), .groups = 'drop') %>%
-  arrange(desc(total_count))
-
-# Print the result
-print(total_crimes_by_sex_ethnicity)
-```
-
-```{r}
-descent_labels <- c(
-A = "Other Asian",B = "Black", C = "Chinese", D = "Cambodian", F = "Filipino", G = "Guamanian",
-H = "Hispanic/Latin/Mexican", I = "American Indian/Alaskan Native", J = "Japanese", K = "Korean",
-L = "Laotian", O = "Other", P = "Pacific Islander", S = "Samoan", U = "Hawaiian", V = "Vietnamese",
-W = "White", X = "Unknown", Z = "Asian Indian"
-)
-
-
-# Create a heatmap
-ggplot(total_crimes_by_sex_ethnicity, aes(x = factor(Victim_Descent, levels = names(descent_labels)), 
-                                            y = Victim_Sex, fill = total_count)) +
+crime_data %>%
+  group_by(Vict.Descent, Time_Period) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
   geom_tile(color = "white") +
   scale_fill_gradient(low = "lightblue", high = "darkblue") +
-  labs(title = "Heatmap of Total Crimes by Victim Sex and Ethnicity",
-       x = "Ethnicity",
-       y = "Victim Sex",
-       fill = "Total Crimes") +
-  scale_x_discrete(labels = descent_labels) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
+  theme_minimal()
 ```
 
-Analysis:
+```{r Code Chunk-5, echo=TRUE}
+library(lubridate)
 
-Males:
-1) For several ethnic groups, males are involved in the majority of crimes compared to females. Black and Hispanic/Latino/Mexican groups exhibit the highest crime counts, indicated by darker shades.
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
 
-Females:
-1) Crimes against females appear less frequent overall, with relatively lighter shades. However, there is still notable representation among Black and Hispanic/Latino/Mexican victims, though to a lesser extent than males.
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
 
-Unknown/Other Sex (X):
-1) This category has significant counts across several ethnicities, particularly Black, Hispanic/Latino/Mexican, and White groups.     
+---
+title: "SMART Question-3 EDA"
+author: "Abhinaysai Kamineni"
+date: "10/20/2024"
+# date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
 
-White victims also show a high frequency but with a more balanced sex distribution compared to other ethnic groups.
-Asian and Pacific Islander groups generally exhibit lower crime counts, as indicated by the lighter shades.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-The gender distribution also shows that males are disproportionately affected across most ethnic groups, especially in the most impacted categories.
+```{r Library Installation, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(cluster)
+library(ggmap)
+```
+
+```{r Code Chunk-1, echo=TRUE}
+summary(crime_data)
+```
+
+```{r Code Chunk-2, echo=TRUE}
+library(dplyr)
+names(crime_data)
+crime_frequency <- crime_data %>%
+summarise(Frequency = n()) %>%
+arrange(desc(Frequency))
+```
+
+```{r Code Chunk-3, echo=TRUE}
+sample_data <- crime_data %>% 
+  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
+  head(20)
+
+sample_data
+```
+
+```{r Code Chunk-4, echo=TRUE}
+crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
+  theme_minimal()
+
+```
+
+
+```{r Code Chunk-5, echo=TRUE}
+crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
+                              breaks = c(0, 600, 1200, 1800, 2400), 
+                              labels = c("Night", "Morning", "Afternoon", "Evening"))
+
+crime_data %>%
+  group_by(Vict.Descent, Time_Period) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
+  theme_minimal()
+```
+
+```{r Code Chunk-6, echo=TRUE}
+library(lubridate)
+
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
+
+
+```{r Code Chunk-7, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+
+crime_distribution <- crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+ggplot(crime_distribution, aes(x = "", y = Percentage, fill = Vict.Descent)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +  # Convert to pie chart
+  labs(title = "Distribution of Crimes by Victim Descent",
+       fill = "Victim Descent") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+```
+
+```{r Code Chunk-8, echo=TRUE}
+library(ggplot2)
+library(dplyr)
+
+victim_counts <- crime_data %>%
+  count(Vict.Descent)
+
+ggplot(victim_counts, aes(x = Vict.Descent, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Count of Crimes by Victim Descent",
+       x = "Victim Descent",
+       y = "Count of Crimes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+```
+
+```{r Code Chunk-9, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-10, echo=TRUE}
+library(dplyr)
+library(tidyr)
+
+unique_values <- unique(crime_data$Vict.Descent)
+print(unique_values)
+
+relevant_data <- crime_data %>%
+  select(LON, LAT, Vict.Descent)
+
+relevant_data$Vict.Descent <- as.factor(relevant_data$Vict.Descent)
+
+dummy_data <- model.matrix(~ Vict.Descent - 1, data = relevant_data)
+
+combined_data <- cbind(relevant_data[, c("LON", "LAT")], dummy_data)
+
+cor_matrix <- cor(combined_data, use = "pairwise.complete.obs")
+
+
+print(cor_matrix)
+```
+
+```{r Code Chunk-11, echo=TRUE}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+numeric_data <- crime_data[sapply(crime_data, is.numeric)]
+
+corr <- cor(numeric_data, use = "complete.obs")  # use "complete.obs" to handle missing values
+
+corrplot(corr, method = "color", 
+         addCoef.col = "black",      # Add correlation coefficients
+         tl.col = "black",           # Text color for labels
+         tl.srt = 45,                # Rotation of text labels
+         number.cex = 0.9,           # Size of the correlation coefficient text
+         tl.cex = 0.9,               # Size of the text label for variables
+         col = colorRampPalette(c("navy", "white", "firebrick3"))(200), # Refined color palette
+         title = "Correlation Matrix", # Title of the plot
+         mar = c(1,1,2,1),           # Adjusted margins for spacing
+         cl.cex = 0.8,               # Size of the color legend text
+         cl.pos = "r",               # Position of the color legend to the right
+         diag = FALSE)               # Remove diagonal for better clarity
+```
+
+```{r Code Chunk-12, echo=TRUE}
+ggplot(crime_data, aes(x = LON)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Longitude) by Victim Descent", 
+       x = "Longitude", 
+       y = "Density") +
+  theme_minimal()
+
+ggplot(crime_data, aes(x = LAT)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Latitude) by Victim Descent", 
+       x = "Latitude", 
+       y = "Density") +
+  theme_minimal()
+```
+
+```{r Code Chunk-13, echo=TRUE}
+anova_result_1 <- aov(LAT ~ AREA, data = crime_data)
+summary(anova_result_1)
+
+anova_result_2 <- aov(LON ~ AREA, data = crime_data)
+summary(anova_result_2)
+```
+
+```{r Code Chunk-14, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-15, echo=TRUE}
+# Filter data for two specific victim descent groups and non-missing lat/lon values
+geo_subset <- crime_data %>%
+  filter(Vict.Descent %in% c("H", "B"), !is.na(LAT), !is.na(LON))
+
+# Ensure the data has exactly two levels for Vict.Descent
+if (length(unique(geo_subset$Vict.Descent)) == 2) {
+  # T-test for differences in latitude and longitude between the two groups
+  latitude_t_test <- t.test(LAT ~ Vict.Descent, data = geo_subset)
+  longitude_t_test <- t.test(LON ~ Vict.Descent, data = geo_subset)
+  
+  # Display results
+  list(Latitude_Test = latitude_t_test, Longitude_Test = longitude_t_test)
+} else {
+  print("Data does not have exactly 2 groups for Vict.Descent. Please check the filtering.")
+}
+```
