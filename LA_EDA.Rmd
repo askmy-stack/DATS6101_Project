@@ -36,7 +36,7 @@ options(scientific=T, digits = 3)
 2) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
 3) How do crime rates fluctuate during the holiday season, particularly in November and December, and what types of crimes predominantly occur during these months? Additionally, how have these patterns evolved over the years?
 4) How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
-5) Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
+5) Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
 
 
 ```{r}
@@ -959,7 +959,7 @@ nrow(la_crime)
 
 
 ```{r}
-# Summarize and find top 5 crimes with weapon usage
+# Summarize and find top 10 crimes with weapon usage
 top_crimes <- la_crime %>%
   group_by(Crime_Description, Weapons_Description) %>%
   summarise(count = n(), .groups = 'drop') %>%
