@@ -353,7 +353,7 @@ print(summary_table)
 ```
 <<<<<<< HEAD
 ```{r}
-head(crime$Date_Reported)
+head(crime$Date.Rptd)
 ```
 
 ```{r}
