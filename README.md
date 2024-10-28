@@ -20,7 +20,7 @@ The dataset includes detailed information on reported crimes from 2020 to the pr
 1. Crime types
 2. Locations
 3. Dates
-4. Demographic data of involved individuals. etc
+4. Demographic data of involved individuals etc.
 
 The dataset includes detailed fields such as crime status (whether the case is open, under investigation, or closed), types of weapons used, and multiple crime codes for incidents involving more than one criminal offense. This allows for deeper analysis of crime severity and resolution rates.
 

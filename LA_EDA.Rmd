@@ -421,7 +421,7 @@ crime_data_filtered <- crime_data %>%
 # Create a summary table with year-over-year percentage changes
 crime_summary <- crime_data_filtered %>%
   mutate(Year = year(DATE.OCC)) %>%
-  filter(Year >= 2020) %>%
+  filter(Year %in% c(2020, 2023)) %>%
   group_by(AREA.NAME, Year) %>%
   summarise(crime_count = n(), .groups = "drop") %>%
   group_by(AREA.NAME) %>%
@@ -440,32 +440,11 @@ crime_table <- crime_summary %>%
     names_prefix = "percent_change_"
   )
 
-# Print the table
 kable(crime_table, format = "markdown", digits = 2)
 
 ```
 
-```{r}
 
-library(dplyr)
-library(lubridate)
-
-# Assuming crime_data is your original dataset and DATE.OCC is a date column
-crime_summary <- crime_data %>%
-  mutate(Year = year(DATE.OCC)) %>%
-  filter(Year %in% c(2020, 2023)) %>%
-  group_by(AREA.NAME, Year) %>%
-  summarise(crime_count = n(), .groups = "drop") %>%
-  pivot_wider(names_from = Year, values_from = crime_count) %>%
-  mutate(percent_change = (`2023` - `2020`) / `2020` * 100) %>%
-  arrange(desc(percent_change))
-
-# Print the summary
-print(crime_summary)
-
-
-
-```
 
 
 ```{r}
@@ -495,7 +474,6 @@ top_crimes_by_area <- crime_analysis %>%
   top_n(3, percent_change) %>%
   arrange(AREA.NAME, desc(percent_change))
 
-# Print results
 print(top_crimes_by_area)
 
 ```
@@ -506,7 +484,7 @@ library(dplyr)
 library(ggplot2)
 library(lubridate)
 
-# Calculate crime changes by Area, Crime Type, Sex, and Race
+# Crime changes by Area, Crime Type, Sex, and Race
 crime_analysis <- crime_data %>%
   filter(year(DATE.OCC) %in% c(2020, 2023)) %>%
   group_by(AREA.NAME, Crm.Cd.Desc, Vict.Sex, Vict.Descent, Year = year(DATE.OCC)) %>%
@@ -520,7 +498,6 @@ crime_analysis <- crime_data %>%
   ) %>%
   filter(!is.na(percent_change))
 
-# Create multiple visualizations
 
 # 1. Crime Change by Area and Sex
 p1 <- ggplot(crime_analysis, 
@@ -545,13 +522,10 @@ p2 <- ggplot(crime_analysis,
        fill = "Victim Descent")
 
 
-
-
-# Print all plots
 print(p1)
 print(p2)
 
-# Create summary table
+# Summary table
 summary_table <- crime_analysis %>%
   group_by(AREA.NAME, Vict.Sex, Vict.Descent) %>%
   summarise(
@@ -562,8 +536,6 @@ summary_table <- crime_analysis %>%
   arrange(desc(avg_percent_change))
 
 print(summary_table)
-
-
 ```
 
 **Question 3**
@@ -688,210 +660,274 @@ groups?
 ```{r Library Installation, echo=TRUE}
 library(tidyverse)
 library(ggplot2)
-library(sf)
-library(cluster)
-library(ggmap)
-```
-
-```{r Summary Check, echo=TRUE}
-summary(crime_data)
-```
-
-```{r Code Chunk-1, echo=TRUE}
-library(dplyr)
-names(crime_data)
-crime_frequency <- crime_data %>%
-summarise(Frequency = n()) %>%
-arrange(desc(Frequency))
-```
-
-```{r Code Chunk-2, echo=TRUE}
-sample_data <- crime_data %>% 
-  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
-  head(20)
-
-sample_data
-```
-
-
-```{r Code Chunk-3, echo=TRUE}
-crime_data %>%
-  group_by(Vict.Descent) %>%
-  summarise(Frequency = n()) %>%
-  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
-  theme_minimal()
-
-```
-
-```{r Code Chunk-4, echo=TRUE}
-crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
-                              breaks = c(0, 600, 1200, 1800, 2400), 
-                              labels = c("Night", "Morning", "Afternoon", "Evening"))
-
-crime_data %>%
-  group_by(Vict.Descent, Time_Period) %>%
-  summarise(Frequency = n()) %>%
-  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
-  geom_tile(color = "white") +
-  scale_fill_gradient(low = "lightblue", high = "darkblue") +
-  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
-  theme_minimal()
-```
-
-```{r Code Chunk-5, echo=TRUE}
 library(lubridate)
 
-crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+# Ensure date is in correct format
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
 
-crime_data %>%
-  group_by(Month, Vict.Descent) %>%
-  summarise(Frequency = n()) %>%
-  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
-  geom_line(size = 1) +
-  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
-  theme_minimal()
-  theme_minimal()
+
+# Identify top 3 crimes overall from 2020 to present
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023 ) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+crime_summary <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020) %>%
+  group_by(AREA.NAME) %>%
+  summarise(
+    total_crime = n(),
+    top3_crime = sum(Crm.Cd %in% top_crimes$Crm.Cd)
+  ) %>%
+  mutate(top3_pct = top3_crime / total_crime * 100)
+top_areas <- crime_summary %>%
+  arrange(desc(top3_crime)) %>%
+  head(5)
+
+# Filter data for top 3 crimes from 2020 onwards
+crime_filtered <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020, Crm.Cd %in% top_crimes$Crm.Cd)
 ```
 
-```{r Code Chunk-6, echo=TRUE}
-library(lubridate)
-
-crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
-
-crime_data %>%
-  group_by(Month, Vict.Descent) %>%
-  summarise(Frequency = n()) %>%
-  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
-  geom_line(size = 1) +
-  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
-  theme_minimal()
-  theme_minimal()
-```
 
 
-```{r Code Chunk-7, echo=TRUE}
-library(dplyr)
-library(ggplot2)
 
-crime_distribution <- crime_data %>%
-  group_by(Vict.Descent) %>%
-  summarise(Frequency = n(), .groups = "drop") %>%
-  mutate(Percentage = Frequency / sum(Frequency) * 100)
 
-ggplot(crime_distribution, aes(x = "", y = Percentage, fill = Vict.Descent)) +
-  geom_bar(stat = "identity", width = 1) +
-  coord_polar("y") +  # Convert to pie chart
-  labs(title = "Distribution of Crimes by Victim Descent",
-       fill = "Victim Descent") +
+```{r}
+
+# 1. Create top_crimes (2020-2023)
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+# 2. Create top_areas (2020-2023)
+top_areas <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023) %>%
+  group_by(AREA.NAME) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(5)
+
+# 3. Create crime_counts with verified column names
+crime_counts <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023,
+         AREA.NAME %in% top_areas$AREA.NAME,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
+  summarise(crime_count = n(), .groups = 'drop')
+
+# 4. Trend analysis
+trend_analysis <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  summarise(
+    p_value = summary(lm(crime_count ~ Year))$coefficients[2,4],
+    r_squared = summary(lm(crime_count ~ Year))$r.squared,
+    .groups = 'drop'
+  )
+
+# 5. Visualization
+p1 <- ggplot(crime_counts,
+             aes(x = Year, y = crime_count, color = AREA.NAME)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +
   theme_minimal() +
-  theme(axis.text.x = element_blank())
-```
+  labs(title = "Crime Trends by Type and Area (2020-2023)",
+       x = "Year",
+       y = "Crime Count")
 
-```{r Code Chunk-8, echo=TRUE}
-library(ggplot2)
+# Print results
+print("\nTrend Analysis Results:")
+print(trend_analysis)
+
+print(p1)
+
+```
+  1. Strong Evidence of Trends (p < 0.05):
+# - Vehicle theft shows significant patterns in three areas (Southwest p=0.00149, Central p=0.03326, 77th Street p=0.03744)
+# - These trends are highly reliable with R² > 0.92, suggesting strong predictability
+
+  2. Notable but Not Significant:
+# - Battery cases show strong patterns (R² > 0.81) but fall just short of significance (p ≈ 0.06-0.10)
+# - Pacific area shows consistent moderate patterns (R² > 0.54) across all crime types
+
+  3. Areas Needing Further Investigation:
+# - Theft of Identity shows weak patterns across most areas (R² < 0.36)
+# - Southwest Battery shows no clear trend (R² = 0.001, p = 0.97)
+
+```{r}
+
 library(dplyr)
-
-victim_counts <- crime_data %>%
-  count(Vict.Descent)
-
-ggplot(victim_counts, aes(x = Vict.Descent, y = n)) +
-  geom_bar(stat = "identity") +
-  labs(title = "Count of Crimes by Victim Descent",
-       x = "Victim Descent",
-       y = "Count of Crimes") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  theme_minimal()
-```
-
-```{r Code Chunk-9, echo=TRUE}
-# ANOVA for Longitude
-anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
-summary(anova_lon)
-
-# ANOVA for Latitude
-anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
-summary(anova_lat)
-```
-
-```{r Code Chunk-10, echo=TRUE}
-library(dplyr)
-library(tidyr)
-
-unique_values <- unique(crime_data$Vict.Descent)
-print(unique_values)
-
-relevant_data <- crime_data %>%
-  select(LON, LAT, Vict.Descent)
-
-relevant_data$Vict.Descent <- as.factor(relevant_data$Vict.Descent)
-
-dummy_data <- model.matrix(~ Vict.Descent - 1, data = relevant_data)
-
-combined_data <- cbind(relevant_data[, c("LON", "LAT")], dummy_data)
-
-cor_matrix <- cor(combined_data, use = "pairwise.complete.obs")
-
-
-print(cor_matrix)
-```
-
-```{r Code Chunk-11, echo=TRUE}
 library(ggplot2)
-library(reshape2)
-library(corrplot)
+library(lubridate)
 
-numeric_data <- crime_data[sapply(crime_data, is.numeric)]
+# Date formatting
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
 
-corr <- cor(numeric_data, use = "complete.obs")  # use "complete.obs" to handle missing values
+# top 3 crimes in top 5 areas
+crime_counts <- crime_data %>%
 
-corrplot(corr, method = "color", 
-         addCoef.col = "black",      # Add correlation coefficients
-         tl.col = "black",           # Text color for labels
-         tl.srt = 45,                # Rotation of text labels
-         number.cex = 0.9,           # Size of the correlation coefficient text
-         tl.cex = 0.9,               # Size of the text label for variables
-         col = colorRampPalette(c("navy", "white", "firebrick3"))(200), # Refined color palette
-         title = "Correlation Matrix", # Title of the plot
-         mar = c(1,1,2,1),           # Adjusted margins for spacing
-         cl.cex = 0.8,               # Size of the color legend text
-         cl.pos = "r",               # Position of the color legend to the right
-         diag = FALSE)               # Remove diagonal for better clarity
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023,
+         AREA.NAME %in% top_areas$AREA.NAME,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(AREA.NAME, Year = year(DATE.OCC), Crm.Cd.Desc) %>%
+  summarise(crime_count = n()) %>%
+  ungroup()
+
+# Percent change from 2020 benchmark
+crime_change <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  mutate(
+    benchmark_2020 = crime_count[Year == 2020],
+    percent_change = (crime_count - benchmark_2020) / benchmark_2020 * 100
+  ) %>%
+  ungroup()
+
+# line graph showing percent change from 2020 benchmark for each area
+p <- ggplot(crime_change, aes(x = Year, y = percent_change, color = Crm.Cd.Desc, group = Crm.Cd.Desc)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~ AREA.NAME, ncol = 2) +
+  theme_minimal() +
+  labs(title = "Percent Change in Top 3 Crimes from 2020 Benchmark - Top 5 Areas",
+       x = "Year",
+       y = "Percent Change from 2020",
+       color = "Crime Type") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+
+print(p)
+
+print(crime_change)
 ```
 
-```{r Code Chunk-12, echo=TRUE}
-ggplot(crime_data, aes(x = LON)) +
-  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
-  facet_wrap(~ Vict.Descent) +
-  labs(title = "Geographic Patterns of Crime (Longitude) by Victim Descent", 
-       x = "Longitude", 
-       y = "Density") +
-  theme_minimal()
+#------------------------------------------------------------------------------
+# YEAR-OVER-YEAR CRIME TREND ANALYSIS (2020-2023)
+#------------------------------------------------------------------------------
 
-ggplot(crime_data, aes(x = LAT)) +
-  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
-  facet_wrap(~ Vict.Descent) +
-  labs(title = "Geographic Patterns of Crime (Latitude) by Victim Descent", 
-       x = "Latitude", 
-       y = "Density") +
-  theme_minimal()
-```
+1. Battery - Simple Assault:
+  # - Central shows highest spikes in 2021-2022 (~25%)
+  # - Hollywood shows initial increase then decline
+  # - Pacific maintains moderate, stable increases
+  # - 77th Street shows fluctuating pattern
 
-```{r Code Chunk-13, echo=TRUE}
-anova_result_1 <- aov(LAT ~ AREA, data = crime_data)
-summary(anova_result_1)
+2. Theft of Identity:
+  # - 77th Street shows dramatic spike in 2022 (~250%)
+  # - Southwest shows significant increase in 2022 (~200%)
+  # - All areas show sharp decline in 2023
+  # - Central shows more moderate increases
 
-anova_result_2 <- aov(LON ~ AREA, data = crime_data)
-summary(anova_result_2)
-```
+3. Vehicle - Stolen:
+  # - Central shows consistent high increases (40% in 2021-2022)
+  # - Hollywood shows decline in 2023
+  # - Pacific and Southwest show moderate increases
+  # - More stable patterns than other crime types
 
-```{r Code Chunk-14, echo=TRUE}
-# ANOVA for Longitude
-anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
-summary(anova_lon)
+4. Overall Patterns:
+  # - 2022 was peak year for most crimes
+  # - 2023 shows general declining trend
+  # - Central area shows highest volatility
+  # - Different crime types show distinct patterns by area
+
+
+```{r}
+# Corrected Statistical Analysis 
+
+# 1. Summary Statistics
+summary_stats <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  summarise(
+    mean_count = mean(crime_count),
+    sd_count = sd(crime_count),
+    min_count = min(crime_count),
+    max_count = max(crime_count)
+  )
+
+# 2. ANOVA test (corrected)
+anova_test <- aov(crime_count ~ AREA.NAME + Crm.Cd.Desc, data = crime_counts)
+summary(anova_test)
+
+# 3. Linear Regression for Trend Analysis
+# Separate regression for each area and crime type
+trend_analysis <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  do(model = lm(crime_count ~ Year, data = .))
+
+# 4. Calculate year-over-year changes
+yoy_changes <- crime_counts %>%
+  group_by(AREA.NAME, Crm.Cd.Desc) %>%
+  arrange(Year) %>%
+  mutate(
+    prev_year_count = lag(crime_count),
+    pct_change = (crime_count - prev_year_count) / prev_year_count * 100
+  )
+# Create the visualization
+# Create the visualization with correct color mapping
+ggplot(yoy_changes,
+       aes(x = as.factor(Year),
+           y = pct_change,
+           fill = AREA.NAME)) +  # Changed to AREA.NAME for better distinction
+  geom_bar(stat = "identity",
+           position = "dodge",
+           width = 0.7) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             color = "red") +
+  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +  # Separate plots by crime type
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +  # Using a color-blind friendly palette
+  labs(title = "Year-over-Year Percentage Change in Crime Counts",
+       subtitle = "By Area and Crime Type (2020-2023)",
+       x = "Year",
+       y = "Percentage Change (%)",
+       fill = "Area") +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 12),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    axis.text = element_text(size = 10),
+    legend.position = "bottom",
+    strip.text = element_text(size = 10, face = "bold")
+  )
+
+# 5. Statistical Visualization
+# Create more robust visualizations
+p1 <- ggplot(crime_counts, aes(x = Year, y = crime_count, color = AREA.NAME)) +
+  geom_line() +
+  geom_point() +
+  facet_wrap(~Crm.Cd.Desc, scales = "free_y") +
+  theme_minimal() +
+  labs(title = "Crime Trends by Type and Area",
+       x = "Year",
+       y = "Crime Count") +
+  theme(legend.position = "bottom")
+
+# 6. Correlation Analysis
+correlation_matrix <- crime_counts %>%
+  pivot_wider(
+    names_from = Crm.Cd.Desc,
+    values_from = crime_count
+  ) %>%
+  select(-AREA.NAME, -Year) %>%
+  cor(use = "complete.obs")
+
+# Print results
+print("Summary Statistics:")
+print(summary_stats)
+
+print("\nANOVA Results:")
+print(summary(anova_test))
+
+print("\nYear-over-Year Changes:")
+print(yoy_changes)
+
+print("\nCorrelation Matrix:")
+print(correlation_matrix)
 
 # ANOVA for Latitude
 anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
