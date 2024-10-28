@@ -98,42 +98,6 @@ print("Data after removing unnecessary columns:")
 print(names(crime_data))
 ```
 
-```{r}
-
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-
-# Ensure date is in correct format
-crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-
-
-# Identify top 3 crimes overall from 2020 to present
-top_crimes <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020) %>%
-  group_by(Crm.Cd, Crm.Cd.Desc) %>%
-  summarise(count = n()) %>%
-  arrange(desc(count)) %>%
-  head(3)
-crime_summary <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020) %>%
-  group_by(AREA.NAME) %>%
-  summarise(
-    total_crime = n(),
-    top3_crime = sum(Crm.Cd %in% top_crimes$Crm.Cd)
-  ) %>%
-  mutate(top3_pct = top3_crime / total_crime * 100)
-top_areas <- crime_summary %>%
-  arrange(desc(top3_crime)) %>%
-  head(5)
-# Identify top 5 areas with highest counts of top 3 crimes
-
-
-# Filter data for top 3 crimes from 2020 onwards
-crime_filtered <- crime_data %>%
-  filter(year(DATE.OCC) >= 2020, Crm.Cd %in% top_crimes$Crm.Cd)
-```
-
 
 
 Question 5:
