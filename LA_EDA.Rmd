@@ -523,9 +523,12 @@ crime_analysis <- crime_data %>%
   filter(!is.na(percent_change))
 
 # Create multiple visualizations
+filtered_crime_analysis <- crime_analysis %>%
+  filter(Vict.Sex %in% c("M", "F", "X"))
+
 
 # 1. Crime Change by Area and Sex
-p1 <- ggplot(crime_analysis, 
+p1 <- ggplot(filtered_crime_analysis, 
        aes(x = AREA.NAME, y = percent_change, fill = Vict.Sex)) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
@@ -535,21 +538,29 @@ p1 <- ggplot(crime_analysis,
        y = "Percent Change",
        fill = "Victim Sex")
 
-# 2. Crime Change by Area and Race/Descent
-p2 <- ggplot(crime_analysis, 
-       aes(x = AREA.NAME, y = percent_change, fill = Vict.Descent)) +
+# First, filter out unknown descent values and aggregate the data
+crime_analysis_filtered <- crime_analysis %>%
+  filter(Vict.Descent != "X") %>%  # Remove unknown values
+  group_by(AREA.NAME, Vict.Descent) %>%
+  summarise(percent_change = mean(percent_change, na.rm = TRUE))
+
+# Create the plot with filtered data
+p2 <- ggplot(crime_analysis_filtered, 
+       aes(x = AREA.NAME, 
+           y = percent_change, 
+           fill = factor(Vict.Descent, 
+                        levels = names(descent_labels)[names(descent_labels) != "X"],
+                        labels = descent_labels[names(descent_labels) != "X"]))) +
   geom_bar(stat = "identity", position = "dodge") +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "right") +
   labs(title = "Crime Change by Area and Victim Descent (2020-2023)",
        x = "Area",
        y = "Percent Change",
-       fill = "Victim Descent")
+       fill = "Victim Descent") +
+  scale_fill_brewer(palette = "Set3")
 
-
-
-
-# Print all plots
 print(p1)
 print(p2)
 
