@@ -691,6 +691,7 @@ Visual Accessibility: The bar chart displaying top 20 crime types during the hol
 
 Detailed Examination: The detailed breakdown by crime type, year, and month provides a granular view of crime trends, offering insights not only into the ‘what’ and ‘when’ but potentially the ‘why’ of crime patterns. For instance, understanding that thefts increase during November and December could be linked to the higher volume of shopping and unattended properties during the holiday season.
 
+*** END OF QUESTION 2 ***
 
 Q4. Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
 
@@ -768,17 +769,31 @@ print(top_crimes)
 top_crimes <- top_crimes %>%
   mutate(percentage = count / sum(count) * 100)
 
-# Create a pie chart
-ggplot(top_crimes, aes(x = "", y = count, fill = Crime_Description)) +
-  geom_bar(width = 1, stat = "identity") +
-  coord_polar("y") +
-  labs(title = "Distribution of Weapon Usage by Crime Description") +
-  theme_void() +
-  theme(legend.position = "right")
-  geom_text(aes(label = paste0(round(percentage, 1), "%")), 
-            position = position_stack(vjust = 0.5), 
-            color = "white")
+summary <- top_crimes %>%
+  group_by(Crime_Description) %>%
+  summarise(total_count = sum(count)) %>%
+  mutate(percentage = (total_count / sum(total_count)) * 100)
 
+custom_colors <- c(
+  "BATTERY - SIMPLE ASSAULT" = "#FF6F61",
+  "INTIMATE PARTNER - SIMPLE ASSAULT" = "#6B5B95",
+  "CRIMINAL THREATS - NO WEAPON DISPLAYED" = "#88B04B",
+  "ROBBERY" = "#F7CAC9",
+  "ASSAULT WITH DEADLY WEAPON, AGGRAVATED ASSAULT" = "#92A8D1",
+  "INTIMATE PARTNER - AGGRAVATED ASSAULT" = "#65bdc8",
+  "UNKNOWN WEAPON/OTHER WEAPON" = "#B565A7"
+)
+
+# Create the pie chart
+ggplot(summary, aes(x = factor(1), y = total_count, fill = Crime_Description)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar(theta="y", start = 0) +
+  labs(title = "Distribution of Top 10 Crimes in LA with Most Weapons Usage") +
+  theme_void() +
+  scale_fill_manual(values = custom_colors) +
+  theme(legend.position = "right") +
+  geom_text(aes(label = sprintf("%.1f%%", percentage)), 
+            position = position_stack(vjust = 0.5), color = "black")
 ```
 
 
@@ -866,6 +881,26 @@ Asian and Pacific Islander groups generally exhibit lower crime counts, as indic
 
 The gender distribution also shows that males are disproportionately affected across most ethnic groups, especially in the most impacted categories.
 
+```{r}
+#Test for Independence
+contingency_Sex <- table(la_crime$Victim_Sex, la_crime$Crime_Description)
+
+contingency_descent <- table(la_crime$Victim_Descent, la_crime$Crime_Description)
+```
+
+```{r}
+chi_squared_result <- chisq.test(contingency_Sex)
+print(chi_squared_result)
+```
+```{r}
+chi_squared_result1 <- chisq.test(contingency_descent)
+print(chi_squared_result1)
+```
+There is a statistically significant association between the two categorical variables for both tests conducted between Victim Sex, Descent and Crime. Hence we can accept the alternate hypothesis that they are dependent on each other.
+
+
+
+*** END OF QUESTION 4 ***
 
 SMART Question 3: - How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
 significant geographic patterns (based on latitude and longitude) associated with specific victim
