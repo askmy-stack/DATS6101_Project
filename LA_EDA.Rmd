@@ -351,7 +351,6 @@ print(summary_table)
 
 
 ```
-<<<<<<< HEAD
 
 Question 2
 
@@ -465,7 +464,6 @@ Visual Accessibility: The bar chart displaying top 20 crime types during the hol
 Detailed Examination: The detailed breakdown by crime type, year, and month provides a granular view of crime trends, offering insights not only into the ‘what’ and ‘when’ but potentially the ‘why’ of crime patterns. For instance, understanding that thefts increase during November and December could be linked to the higher volume of shopping and unattended properties during the holiday season.
 
 
-=======
 Q4. Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
 
 ```{r}
