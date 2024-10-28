@@ -34,7 +34,7 @@ options(scientific=T, digits = 3)
 1) Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
 2) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
 3) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
-4) Which type of crime in Los Angeles is most frequently associated with weapon use, and what specific types of weapons are most commonly involved in those incidents over the last 2 years?
+4) Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
 5) How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
 
 
@@ -351,6 +351,7 @@ print(summary_table)
 
 
 ```
+<<<<<<< HEAD
 ```{r}
 head(crime$Date_Reported)
 ```
@@ -461,3 +462,178 @@ Visual Accessibility: The bar chart displaying top 20 crime types during the hol
 Detailed Examination: The detailed breakdown by crime type, year, and month provides a granular view of crime trends, offering insights not only into the ‘what’ and ‘when’ but potentially the ‘why’ of crime patterns. For instance, understanding that thefts increase during November and December could be linked to the higher volume of shopping and unattended properties during the holiday season.
 
 
+=======
+Q4. Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
+
+```{r}
+la_crime <- crime %>%
+  filter(!is.na(Weapon.Used.Cd))
+
+print(la_crime)
+```
+```{r}
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", "Crm.Cd.2","Crm.Cd.3","Crm.Cd.4",
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+la_crime<- la_crime[, !(names(la_crime) %in% cols_to_remove)]
+```
+
+```{r}
+la_crime <- la_crime %>% rename(
+  Division_NO = 'DR_NO',
+  Date_Reported = 'Date.Rptd',
+  Date_Occurred = 'DATE.OCC',
+  Time_Occurred = 'TIME.OCC',
+  Area_Code = 'AREA',
+  Area_Name = 'AREA.NAME',
+  Crime_Code = 'Crm.Cd',
+  Crime_Description = 'Crm.Cd.Desc',
+  Weapons_Used='Weapon.Used.Cd',    
+  Weapons_Description='Weapon.Desc',
+  Victim_Age = 'Vict.Age',
+  Victim_Sex = 'Vict.Sex',
+  Victim_Descent = 'Vict.Descent',
+  Crime_Code_1 = 'Crm.Cd',
+  Location = 'LOCATION',
+  Latitude = 'LAT',
+  Longitude = 'LON'
+)
+
+print("Data after removing unnecessary columns:")
+print(names(la_crime))
+```
+```{r}
+# Count occurrences of "H" in the Victim_Sex column
+count_H <- sum(la_crime$Victim_Sex == "H", na.rm = TRUE)
+
+# Print the result
+print(count_H)
+
+# Remove rows where Victim_Sex is "H"
+la_crime <- la_crime %>%
+  filter(Victim_Sex != "H")
+
+# Print the result to verify
+nrow(la_crime)
+```
+
+
+
+```{r}
+# Summarize and find top 5 crimes with weapon usage
+top_crimes <- la_crime %>%
+  group_by(Crime_Description, Weapons_Description) %>%
+  summarise(count = n(), .groups = 'drop') %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 10) 
+
+print(top_crimes)
+```
+
+```{r}
+
+# Calculate percentages
+top_crimes <- top_crimes %>%
+  mutate(percentage = count / sum(count) * 100)
+
+# Create a pie chart
+ggplot(top_crimes, aes(x = "", y = count, fill = Crime_Description)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y") +
+  labs(title = "Distribution of Weapon Usage by Crime Description") +
+  theme_void() +
+  theme(legend.position = "right")
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), 
+            position = position_stack(vjust = 0.5), 
+            color = "white")
+
+```
+
+
+```{r}
+weapons_sum <- la_crime %>%
+  group_by(Victim_Sex, Victim_Descent, Weapons_Description,Crime_Description) %>%
+  summarize(total_count = n(), .groups = 'drop') %>%
+  top_n(20, total_count) %>%
+  arrange(desc(total_count)) 
+
+weapons_sum
+```
+
+```{r}
+ custom_labels <- c("Hand Gun", "Strong Arm", "Verbal Threat")
+  ggplot(weapons_sum, aes(x = Weapons_Description, y = total_count, fill = Victim_Sex)) +
+    geom_bar(stat = "identity") +
+    facet_wrap(~ Victim_Descent) +  # Separate panels for each descent
+    labs(title = "Total Weapons Used by Victim Sex and Descent",
+         x = "Weapon Description",
+         y = "Total Count") +
+    scale_x_discrete(labels = custom_labels) +
+    scale_y_continuous(limits = c(0, max(weapons_sum$total_count) * 1.1)) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+Analysis
+1) Hand Gun usage is notably higher for Black (B) and Hispanic (H) victims, with males being disproportionately represented. Strong Arm (physical force) incidents are more frequent for White (W) victims, with a balanced representation of both male and female victims.
+
+2) Across all categories, males (teal) are more frequently victims, especially in cases involving firearms.
+Female victims (red) appear more frequently in non-weapon-based incidents such as Strong Arm cases (e.g., assaults).
+
+3) Hispanic (H) victims have a high rate of gun-related incidents involving male victims. White (W) victims show a high count for Strong Arm incidents, with females almost matching male victims. Other (O) group mainly experiences incidents involving Strong Arm, with no significant firearm usage.
+
+4) This visualization suggests that firearms are predominantly involved in incidents affecting Black and Hispanic males. Meanwhile, physical force is more common among White victims. Gender-based victimization patterns are also evident, with men more frequently involved in firearm-related incidents, whereas women are more often victims in physical confrontations.
+
+```{r}
+# Total crimes by sex and ethnicity
+total_crimes_by_sex_ethnicity <- la_crime %>%
+  filter(!is.na(Victim_Sex) & !is.na(Victim_Descent)) %>% 
+  group_by(Victim_Sex, Victim_Descent) %>%
+  summarise(total_count = n(), .groups = 'drop') %>%
+  arrange(desc(total_count))
+
+# Print the result
+print(total_crimes_by_sex_ethnicity)
+```
+
+```{r}
+descent_labels <- c(
+A = "Other Asian",B = "Black", C = "Chinese", D = "Cambodian", F = "Filipino", G = "Guamanian",
+H = "Hispanic/Latin/Mexican", I = "American Indian/Alaskan Native", J = "Japanese", K = "Korean",
+L = "Laotian", O = "Other", P = "Pacific Islander", S = "Samoan", U = "Hawaiian", V = "Vietnamese",
+W = "White", X = "Unknown", Z = "Asian Indian"
+)
+
+
+# Create a heatmap
+ggplot(total_crimes_by_sex_ethnicity, aes(x = factor(Victim_Descent, levels = names(descent_labels)), 
+                                            y = Victim_Sex, fill = total_count)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Heatmap of Total Crimes by Victim Sex and Ethnicity",
+       x = "Ethnicity",
+       y = "Victim Sex",
+       fill = "Total Crimes") +
+  scale_x_discrete(labels = descent_labels) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+```
+
+Analysis:
+
+Males:
+1) For several ethnic groups, males are involved in the majority of crimes compared to females. Black and Hispanic/Latino/Mexican groups exhibit the highest crime counts, indicated by darker shades.
+
+Females:
+1) Crimes against females appear less frequent overall, with relatively lighter shades. However, there is still notable representation among Black and Hispanic/Latino/Mexican victims, though to a lesser extent than males.
+
+Unknown/Other Sex (X):
+1) This category has significant counts across several ethnicities, particularly Black, Hispanic/Latino/Mexican, and White groups.     
+
+White victims also show a high frequency but with a more balanced sex distribution compared to other ethnic groups.
+Asian and Pacific Islander groups generally exhibit lower crime counts, as indicated by the lighter shades.
+
+The gender distribution also shows that males are disproportionately affected across most ethnic groups, especially in the most impacted categories.
+>>>>>>> origin/main
