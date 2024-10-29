@@ -1,6 +1,12 @@
 ---
-title: "LA_EDA"
-author: html_document
+title: "L.A. Crime Scene Investigation: Data-Driven Detectives"
+author: "
+          Abhinaysai Kamineni
+          Lasya Raghavendra
+          Neeraj Magadum
+          Aakash Hariharan 
+          Amogh Ramagiri
+"
 date: "2024-10-26"
 output:
   html_document:
