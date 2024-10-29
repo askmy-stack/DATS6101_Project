@@ -5,7 +5,7 @@ date: "2024-10-26"
 output:
   html_document:
     code_folding: hide
-    number_sections: true
+    number_sections: false
     toc: yes
     toc_depth: 3
     toc_float: yes
@@ -29,7 +29,7 @@ options(scientific=T, digits = 3)
 # use scipen=999 to prevent scientific notation at all times
 ```
 
-**SMART QUESTIONS**
+# SMART QUESTIONS
 
 
 1) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
@@ -40,16 +40,17 @@ options(scientific=T, digits = 3)
 
 
 ```{r}
-crime = read.csv("Crime_Data_from_2020_to_Present.csv")
+crime = read.csv("/Users/amoghramagiri/Documents/mid_term_project/pro/Crime_Data_from_2020_to_Present.csv")
 head(crime)
 ```
-
+## Date Analysis and Cleaning 0.1
 ```{r}
 nrow(crime)
 ncol(crime)
 ```
 
 The dataset contains 28 columns and 986500 rows.
+
 1) DR_NO - Division of Records Number: Official file number.
 2) Date Rptd - MM/DD/YYYY
 3) DATE OCC - MM/DD/YYYY
@@ -67,7 +68,7 @@ The dataset contains 28 columns and 986500 rows.
 15) LON - Longtitude
 
 
-```{r}
+```{r q01, echo=T, results='markup'}
 na_count <- colSums(is.na(crime))
 print("\nNA Count per Column:")
 print(na_count)
@@ -75,15 +76,15 @@ print(na_count)
 
 ```
 
-```{r}
+```{r q02, echo=T, results='markup'}
 new_crime <- crime[, colSums(is.na(crime)) == 0]
 head(new_crime)
 
 nrow(new_crime)
 ncol(new_crime)
 ```
-
-```{r}
+## Removing Unwanted Columns 0.2
+```{r q04, echo=T, results='markup'}
 # Feature Selection based on Smart Questions
 
 cols_to_remove <- c(
@@ -99,10 +100,11 @@ print("Data after removing unnecessary columns:")
 print(names(crime_data))
 ```
 
-**Question 1:**
+# Question 1
 How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
-# 1. First, let's identify the top 3 crimes and top 5 areas
-```{r}
+
+## 1. First, let's identify the top 3 crimes and top 5 areas
+```{r q05, echo=T, results='markup'}
 
 library(dplyr)
 library(ggplot2)
@@ -196,12 +198,14 @@ print(p1)
 print(p2)
 print(p3)
 ```
+Top 3 Crimes:
 
+BATTERY - SIMPLE ASSAULT
+THEFT OF IDENTITY
+VEHICLE - STOLEN
 
-
-
-
-```{r}
+## 2. Visualization Crime Trends by type and area
+```{r q06, echo=T, results='markup'}
 
 # 1. Create top_crimes (2020-2023)
 top_crimes <- crime_data %>%
@@ -266,7 +270,8 @@ print(p1)
 # - Theft of Identity shows weak patterns across most areas (R² < 0.36)
 # - Southwest Battery shows no clear trend (R² = 0.001, p = 0.97)
 
-```{r}
+## 3. Visulatization - Percent Change in Top 3 Crimes from 2020 Benchmark - Top 5 Areas
+```{r q07, echo=T, results='markup'}
 
 library(dplyr)
 library(ggplot2)
@@ -314,9 +319,8 @@ print(p)
 print(crime_change)
 ```
 
-#------------------------------------------------------------------------------
-# YEAR-OVER-YEAR CRIME TREND ANALYSIS (2020-2023)
-#------------------------------------------------------------------------------
+
+YEAR-OVER-YEAR CRIME TREND ANALYSIS (2020-2023)
 
 1. Battery - Simple Assault:
   # - Central shows highest spikes in 2021-2022 (~25%)
@@ -342,8 +346,8 @@ print(crime_change)
   # - Central area shows highest volatility
   # - Different crime types show distinct patterns by area
 
-
-```{r}
+## 4. Year-over-Year Percentage Change in Crime Counts
+```{r q08, echo=T, results='markup'}
 # Load necessary libraries
 library(dplyr)
 library(ggplot2)
@@ -433,13 +437,13 @@ Key Findings for Policy:
   # - Different crimes show distinct geographic patterns
 
 
-**Question 2**
+# Question 2
 
 Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to 2023 with particular attention to demographic factors (race and sex of victims), and what insights can be drawn from Area3's significant increase in crimes?
 
-Calculating Year-Over-Year Percentage Change:-
+## 1. Calculating Year-Over-Year Percentage Change:-
 
-```{r}
+```{r q09, echo=T, results='markup'}
 
 
 library(tidyr)  # Load tidyr for pivot_wider function
@@ -465,9 +469,9 @@ kable(crime_summary, format = "markdown", digits = 2)
 ```
 
 
-Top 3 Crimes in Areas with Highest Increases :-
+## 2. Top 3 Crimes in Areas with Highest Increases :-
 
-```{r}
+```{r q10, echo=T, results='markup'}
 # Ensure we have the correct top areas based on overall increase from 2020 to 2023
 top_areas <- crime_summary %>%
   arrange(desc(percent_change_2020_2023)) %>%
@@ -509,10 +513,9 @@ Based on the year-over-year percentage change analysis from 2020 to 2023:
 2.	Some neighborhoods, such as 77th Street and Southeast, had minimal increases, suggesting more stable crime rates or possible effectiveness in crime control efforts.
 3.	The variety in percentage changes across neighborhoods highlights that crime rate increases are not uniformly distributed in Los Angeles, with certain areas experiencing much higher growth than others, signaling where law enforcement or community initiatives might prioritize resources.
 
-Crime Change Analysis by Sex and Race :-
+## 3. Crime Change Analysis by Sex and Race :-
 
-
-```{r}
+```{r q11, echo=T, results='markup'}
 library(dplyr)
 library(ggplot2)
 library(lubridate)
@@ -608,18 +611,19 @@ W = "White", X = "Unknown", Z = "Asian Indian"
 3.	Sex-Based Analysis: The data shows varied increases across different sexes in certain areas, with Wilshire and West Valley seeing substantial growth in incidents for male and unknown (X) demographics.
 4.	Need for Targeted Focus: Areas with significant increases, especially Wilshire, show the importance of focused interventions in particular demographics to understand and address underlying causes.
 
-**Question 3**
+# Question 3
 
 How do crime rates fluctuate during the holiday season, particularly in November and December, and what types of crimes predominantly occur during these months? Additionally, how have these patterns evolved over the years?
 
-```{r}
+```{r q12, echo=T, results='markup'}
 head(crime$Date.Rptd)
 ```
 
-```{r}
+```{r q13, echo=T, results='markup'}
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(plotly)
 
 # Display the structure to understand the format of the Date column
 str(crime)
@@ -682,7 +686,7 @@ ggplotly(fc)
 ```
 
 
-```{r}
+```{r q14, echo=T, results='markup'}
 # Annual trend of total crimes during November and December
 annual_holiday_crime_trends <- holiday_crimes %>%
   group_by(Year) %>%
@@ -723,11 +727,12 @@ Detailed Examination: The detailed breakdown by crime type, year, and month prov
 *** END OF QUESTION 3 ***
 
 
-**SMART Question 4:** - How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
+# Question 4
+How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
 significant geographic patterns (based on latitude and longitude) associated with specific victim
 groups?
 
-```{r Library Installation, echo=TRUE}
+```{r q15, echo=T, results='markup'}
 library(tidyverse)
 library(ggplot2)
 library(sf)
@@ -735,11 +740,8 @@ library(cluster)
 library(ggmap)
 ```
 
-```{r Summary Check, echo=TRUE}
-summary(crime_data)
-```
 
-```{r Code Chunk-1, echo=TRUE}
+```{r q16, echo=T, results='markup'}
 library(dplyr)
 names(crime_data)
 crime_frequency <- crime_data %>%
@@ -747,16 +749,9 @@ summarise(Frequency = n()) %>%
 arrange(desc(Frequency))
 ```
 
-```{r Code Chunk-2, echo=TRUE}
-sample_data <- crime_data %>% 
-  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
-  head(20)
 
-sample_data
-```
-
-
-```{r Code Chunk-3, echo=TRUE}
+## 1. Plotting data plots for Victim descent 
+```{r q17, echo=T, results='markup'}
 crime_data %>%
   group_by(Vict.Descent) %>%
   summarise(Frequency = n()) %>%
@@ -767,7 +762,7 @@ crime_data %>%
 
 ```
 
-```{r Code Chunk-4, echo=TRUE}
+```{r q18, echo=T, results='markup'}
 crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
                               breaks = c(0, 600, 1200, 1800, 2400), 
                               labels = c("Night", "Morning", "Afternoon", "Evening"))
@@ -782,7 +777,7 @@ crime_data %>%
   theme_minimal()
 ```
 
-```{r Code Chunk-5, echo=TRUE}
+```{r q19, echo=T, results='markup'}
 library(lubridate)
 
 crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
@@ -793,29 +788,13 @@ crime_data %>%
   summarise(Frequency = n()) %>%
   ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
   geom_line(size = 1) +
-  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
-  theme_minimal()
-  theme_minimal()
-```
-
-```{r Code Chunk-6, echo=TRUE}
-library(lubridate)
-
-crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
-crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
-
-crime_data %>%
-  group_by(Month, Vict.Descent) %>%
-  summarise(Frequency = n()) %>%
-  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
-  geom_line(size = 1) +
-  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Year", y = "Frequency") +
   theme_minimal()
   theme_minimal()
 ```
 
 
-```{r Code Chunk-7, echo=TRUE}
+```{r q20, echo=T, results='markup'}
 library(dplyr)
 library(ggplot2)
 
@@ -826,14 +805,14 @@ crime_distribution <- crime_data %>%
 
 ggplot(crime_distribution, aes(x = "", y = Percentage, fill = Vict.Descent)) +
   geom_bar(stat = "identity", width = 1) +
-  coord_polar("y") +  # Convert to pie chart
+  coord_polar("y") +
   labs(title = "Distribution of Crimes by Victim Descent",
        fill = "Victim Descent") +
   theme_minimal() +
   theme(axis.text.x = element_blank())
 ```
 
-```{r Code Chunk-8, echo=TRUE}
+```{r q21, echo=T, results='markup'}
 library(ggplot2)
 library(dplyr)
 
@@ -849,7 +828,7 @@ ggplot(victim_counts, aes(x = Vict.Descent, y = n)) +
   theme_minimal()
 ```
 
-```{r Code Chunk-9, echo=TRUE}
+```{r q22, echo=T, results='markup'}
 # ANOVA for Longitude
 anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
 summary(anova_lon)
@@ -859,7 +838,7 @@ anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
 summary(anova_lat)
 ```
 
-```{r Code Chunk-10, echo=TRUE}
+```{r q23, echo=T, results='markup'}
 library(dplyr)
 library(tidyr)
 
@@ -878,10 +857,12 @@ combined_data <- cbind(relevant_data[, c("LON", "LAT")], dummy_data)
 cor_matrix <- cor(combined_data, use = "pairwise.complete.obs")
 
 
-print(cor_matrix)
+head(cor_matrix)
+
 ```
 
-```{r Code Chunk-11, echo=TRUE}
+## 2. Correlation Matrix analysis
+```{r q24, echo=T, results='markup'}
 library(ggplot2)
 library(reshape2)
 library(corrplot)
@@ -904,7 +885,7 @@ corrplot(corr, method = "color",
          diag = FALSE)               # Remove diagonal for better clarity
 ```
 
-```{r Code Chunk-12, echo=TRUE}
+```{r q25, echo=T, results='markup'}
 ggplot(crime_data, aes(x = LON)) +
   geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
   facet_wrap(~ Vict.Descent) +
@@ -922,7 +903,7 @@ ggplot(crime_data, aes(x = LAT)) +
   theme_minimal()
 ```
 
-```{r Code Chunk-13, echo=TRUE}
+```{r q26, echo=T, results='markup'}
 anova_result_1 <- aov(LAT ~ AREA, data = crime_data)
 summary(anova_result_1)
 
@@ -930,7 +911,7 @@ anova_result_2 <- aov(LON ~ AREA, data = crime_data)
 summary(anova_result_2)
 ```
 
-```{r Code Chunk-14, echo=TRUE}
+```{r q27, echo=T, results='markup'}
 # ANOVA for Longitude
 anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
 summary(anova_lon)
@@ -940,7 +921,7 @@ anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
 summary(anova_lat)
 ```
 
-```{r Code Chunk-15, echo=TRUE}
+```{r q28, echo=T, results='markup'}
 # Filter data for two specific victim descent groups and non-missing lat/lon values
 geo_subset <- crime_data %>%
   filter(Vict.Descent %in% c("H", "B"), !is.na(LAT), !is.na(LON))
@@ -959,16 +940,19 @@ if (length(unique(geo_subset$Vict.Descent)) == 2) {
 ```
 
 
-**Question 5**
+
+# Question 5
 Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
 
-```{r}
+## 1. Feature Selection and Data Cleaning for Weapons Used
+
+```{r q29, echo=T, results='markup'}
 la_crime <- crime %>%
   filter(!is.na(Weapon.Used.Cd))
 
-print(la_crime)
+tail(la_crime)
 ```
-```{r}
+```{r q30, echo=T, results='markup'}
 cols_to_remove <- c(
    "Mocodes", "Rpt.Dist.No", "Part.1.2", "Crm.Cd.2","Crm.Cd.3","Crm.Cd.4",
   "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
@@ -978,7 +962,7 @@ cols_to_remove <- c(
 la_crime<- la_crime[, !(names(la_crime) %in% cols_to_remove)]
 ```
 
-```{r}
+```{r q31, echo=T, results='markup'}
 la_crime <- la_crime %>% rename(
   Division_NO = 'DR_NO',
   Date_Reported = 'Date.Rptd',
@@ -1002,7 +986,7 @@ la_crime <- la_crime %>% rename(
 print("Data after removing unnecessary columns:")
 print(names(la_crime))
 ```
-```{r}
+```{r q32, echo=T, results='markup'}
 # Count occurrences of "H" in the Victim_Sex column
 count_H <- sum(la_crime$Victim_Sex == "H", na.rm = TRUE)
 
@@ -1018,8 +1002,8 @@ nrow(la_crime)
 ```
 
 
-
-```{r}
+## 2. Summarization and Plots of Top 10 crimes with Weapon Usage
+```{r q33, echo=T, results='markup'}
 # Summarize and find top 10 crimes with weapon usage
 top_crimes <- la_crime %>%
   group_by(Crime_Description, Weapons_Description) %>%
@@ -1030,7 +1014,7 @@ top_crimes <- la_crime %>%
 print(top_crimes)
 ```
 
-```{r}
+```{r q34, echo=T, results='markup'}
 
 # Calculate percentages
 top_crimes <- top_crimes %>%
@@ -1063,18 +1047,18 @@ ggplot(summary, aes(x = factor(1), y = total_count, fill = Crime_Description)) +
             position = position_stack(vjust = 0.5), color = "black")
 ```
 
-
-```{r}
+## 3. Total Weapons used against various victim's sex and victim's descent.
+```{r q35, echo=T, results='markup'}
 weapons_sum <- la_crime %>%
   group_by(Victim_Sex, Victim_Descent, Weapons_Description,Crime_Description) %>%
   summarize(total_count = n(), .groups = 'drop') %>%
   top_n(20, total_count) %>%
   arrange(desc(total_count)) 
 
-weapons_sum
+head(weapons_sum)
 ```
 
-```{r}
+```{r q36, echo=T, results='markup'}
  custom_labels <- c("Hand Gun", "Strong Arm", "Verbal Threat")
   ggplot(weapons_sum, aes(x = Weapons_Description, y = total_count, fill = Victim_Sex)) +
     geom_bar(stat = "identity") +
@@ -1097,7 +1081,8 @@ Female victims (red) appear more frequently in non-weapon-based incidents such a
 
 4) This visualization suggests that firearms are predominantly involved in incidents affecting Black and Hispanic males. Meanwhile, physical force is more common among White victims. Gender-based victimization patterns are also evident, with men more frequently involved in firearm-related incidents, whereas women are more often victims in physical confrontations.
 
-```{r}
+## 4. Total Crimes against Victim's Sex and Descent
+```{r q37, echo=T, results='markup'}
 # Total crimes by sex and ethnicity
 total_crimes_by_sex_ethnicity <- la_crime %>%
   filter(!is.na(Victim_Sex) & !is.na(Victim_Descent)) %>% 
@@ -1106,10 +1091,10 @@ total_crimes_by_sex_ethnicity <- la_crime %>%
   arrange(desc(total_count))
 
 # Print the result
-print(total_crimes_by_sex_ethnicity)
+head(total_crimes_by_sex_ethnicity)
 ```
 
-```{r}
+```{r q38, echo=T, results='markup'}
 descent_labels <- c(
 A = "Other Asian",B = "Black", C = "Chinese", D = "Cambodian", F = "Filipino", G = "Guamanian",
 H = "Hispanic/Latin/Mexican", I = "American Indian/Alaskan Native", J = "Japanese", K = "Korean",
@@ -1148,18 +1133,19 @@ Asian and Pacific Islander groups generally exhibit lower crime counts, as indic
 
 The gender distribution also shows that males are disproportionately affected across most ethnic groups, especially in the most impacted categories.
 
-```{r}
+## 5. Test of Independence
+```{r q39, echo=T, results='markup'}
 #Test for Independence
 contingency_Sex <- table(la_crime$Victim_Sex, la_crime$Crime_Description)
 
 contingency_descent <- table(la_crime$Victim_Descent, la_crime$Crime_Description)
 ```
 
-```{r}
+```{r q40, echo=T, results='markup'}
 chi_squared_result <- chisq.test(contingency_Sex)
 print(chi_squared_result)
 ```
-```{r}
+```{r q41, echo=T, results='markup'}
 chi_squared_result1 <- chisq.test(contingency_descent)
 print(chi_squared_result1)
 ```
