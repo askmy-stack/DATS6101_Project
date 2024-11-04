@@ -1147,11 +1147,11 @@ contingency_Sex <- table(la_crime$Victim_Sex, la_crime$Crime_Description)
 contingency_descent <- table(la_crime$Victim_Descent, la_crime$Crime_Description)
 ```
 
-```{r q40, echo=T, results='markup'}
+```{r q40, echo=T, results='markup', warning= False}
 chi_squared_result <- chisq.test(contingency_Sex)
 print(chi_squared_result)
 ```
-```{r q41, echo=T, results='markup'}
+```{r q41, echo=T, results='markup', warning= False}
 chi_squared_result1 <- chisq.test(contingency_descent)
 print(chi_squared_result1)
 ```
