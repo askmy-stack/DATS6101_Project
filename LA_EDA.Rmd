@@ -690,20 +690,20 @@ library(corrplot)
 
 numeric_data <- crime_data[sapply(crime_data, is.numeric)]
 
-corr <- cor(numeric_data, use = "complete.obs")  # use "complete.obs" to handle missing values
+corr <- cor(numeric_data, use = "complete.obs")
 
 corrplot(corr, method = "color", 
-         addCoef.col = "black",      # Add correlation coefficients
-         tl.col = "black",           # Text color for labels
-         tl.srt = 45,                # Rotation of text labels
-         number.cex = 0.9,           # Size of the correlation coefficient text
-         tl.cex = 0.9,               # Size of the text label for variables
-         col = colorRampPalette(c("navy", "white", "firebrick3"))(200), # Refined color palette
-         title = "Correlation Matrix", # Title of the plot
-         mar = c(1,1,2,1),           # Adjusted margins for spacing
-         cl.cex = 0.8,               # Size of the color legend text
-         cl.pos = "r",               # Position of the color legend to the right
-         diag = FALSE)               # Remove diagonal for better clarity
+         addCoef.col = "black",
+         tl.col = "black",         
+         tl.srt = 45,               
+         number.cex = 0.9,          
+         tl.cex = 0.9,             
+         col = colorRampPalette(c("navy", "white", "firebrick3"))(200),
+         title = "Correlation Matrix", 
+         mar = c(1,1,2,1),         
+         cl.cex = 0.8,          
+         cl.pos = "r",            
+         diag = FALSE)           
 ```
 
 ```{r Code Chunk-12, echo=TRUE}
