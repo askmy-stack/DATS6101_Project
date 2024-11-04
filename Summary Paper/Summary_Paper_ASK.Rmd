@@ -99,6 +99,7 @@ This statistical explanation will make understand the patterns of investigation 
 
 ##Understanding through Plotting and Data Visualization.
 ```{r}
+library(ggplot2)
 crime_data %>%
   group_by(Vict.Descent) %>%
   summarise(Frequency = n()) %>%
@@ -152,7 +153,7 @@ Coorelation Analysis reveals that there is potential geographic patterns in crim
 
 This ANOVA numbers in statistical analysis made in understanding and considering notable patterns at various levels based on the Longtitude and Latitude levels which correlated to no significant reslationship with regards to Victim Descent.
 
-## Conclusion of SMART Question3: - 
+## Conclusion of SMART Question3
 Based on the comprehensive analysis using ANOVA, correlation matrices, and visualizations:
 
 Geographic Distribution:
