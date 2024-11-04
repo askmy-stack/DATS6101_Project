@@ -1,0 +1,338 @@
+---
+title: "LA_EDA"
+output: html_document
+date: "2024-10-26"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
+# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+library(ezids)
+ 
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+**SMART QUESTIONS**
+
+1) Which neighborhoods in Los Angeles have experienced the most significant increases in crime rates from 2020 to the present, and are these trends consistent for the same types of crimes year over year?
+2) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
+3) How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there significant geographic patterns (based on latitude and longitude) associated with specific victim groups?
+4) Which crimes in Los Angeles exhibited the highest weapon usage, and which ethnicities and genders showed the most significant weapon involvement over the last five years?
+5) How have the top three most common crimes from 2020 to the present been distributed across the top five areas where they are most frequently committed in Los Angeles, and are these trends increasing or decreasing in each area from 2020 to 2024?
+
+
+```{r}
+crime = read.csv("Crime_Data_from_2020_to_Present.csv")
+head(crime)
+```
+
+```{r}
+nrow(crime)
+ncol(crime)
+```
+
+The dataset contains 28 columns and 986500 rows.
+1) DR_NO - Division of Records Number: Official file number.
+2) Date Rptd - MM/DD/YYYY
+3) DATE OCC - MM/DD/YYYY
+4) TIME OCC - In 24 hour military time
+5) AREA - The LAPD has 21 Community Police Stations referred to as Geographic Areas within the department. These Geographic Areas are sequentially numbered from 1-21.
+6) AREA NAME - The 21 Geographic Areas or Patrol Divisions are also given a name designation that references a landmark or the surrounding community that it is responsible for.
+7) Crm Cd - Indicates the crime committed. Crime Code 1 is the primary and most serious one. Crime Code 2, 3, and 4 are respectively less serious offenses. Lower crime class numbers are more serious.
+8) Crm Desc - Indicates the crime description
+9) Vict Age - Age of victim
+10) Vict Sex - 	F : Female M : Male X : Unknown
+11) Vict Descent - 	Descent Code: A - Other Asian B - Black C - Chinese D - Cambodian F - Filipino G - Guamanian H - Hispanic/Latin/Mexican I - American Indian/Alaskan Native J - Japanese K - Korean L - Laotian O - Other P - Pacific Islander S - Samoan U - Hawaiian V - Vietnamese W - White X - Unknown Z - Asian Indian
+12) Weapon Desc - Defines the Weapon Used Code provided.
+13) Location - Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
+14) LAT - Latitude
+15) LON - Longtitude
+
+
+```{r}
+na_count <- colSums(is.na(crime))
+print("\nNA Count per Column:")
+print(na_count)
+
+
+```
+
+```{r}
+new_crime <- crime[, colSums(is.na(crime)) == 0]
+head(new_crime)
+
+nrow(new_crime)
+ncol(new_crime)
+```
+```{r}
+# Feature Selection based on Smart Questions
+
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", 
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+crime_data <- new_crime[, !(names(new_crime) %in% cols_to_remove)]
+
+
+print("Data after removing unnecessary columns:")
+print(names(crime_data))
+```
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+# Ensure date is in correct format
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+SMART Question 3: - How does the type or frequency of crimes in Los Angeles vary by victim descent, and are there
+significant geographic patterns (based on latitude and longitude) associated with specific victim
+groups?
+
+```{r Library Installation, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(sf)
+library(cluster)
+library(ggmap)
+```
+
+```{r Summary Check, echo=TRUE}
+summary(crime_data)
+```
+
+```{r Code Chunk-1, echo=TRUE}
+library(dplyr)
+names(crime_data)
+crime_frequency <- crime_data %>%
+summarise(Frequency = n()) %>%
+arrange(desc(Frequency))
+```
+
+```{r Code Chunk-2, echo=TRUE}
+sample_data <- crime_data %>% 
+  select(Vict.Descent, Crm.Cd.Desc, LAT, LON) %>% 
+  head(20)
+
+sample_data
+```
+
+```{r Code Chunk-3, echo=TRUE}
+crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Frequency, fill = Vict.Descent)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Crimes by Victim Descent", x = "Victim Descent", y = "Frequency") +
+  theme_minimal()
+
+```{r Code Chunk-4, echo=TRUE}
+crime_data$Time_Period <- cut(crime_data$TIME.OCC, 
+                              breaks = c(0, 600, 1200, 1800, 2400), 
+                              labels = c("Night", "Morning", "Afternoon", "Evening"))
+
+crime_data %>%
+  group_by(Vict.Descent, Time_Period) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Vict.Descent, y = Time_Period, fill = Frequency)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  labs(title = "Crime Frequency by Victim Descent and Time of Day", x = "Victim Descent", y = "Time of Day") +
+  theme_minimal()
+```
+
+```{r Code Chunk-5, echo=TRUE}
+library(lubridate)
+
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
+
+```{r Code Chunk-6, echo=TRUE}
+library(lubridate)
+
+crime_data$Date.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+crime_data$Month <- floor_date(crime_data$Date.OCC, "month")
+
+crime_data %>%
+  group_by(Month, Vict.Descent) %>%
+  summarise(Frequency = n()) %>%
+  ggplot(aes(x = Month, y = Frequency, color = Vict.Descent)) +
+  geom_line(size = 1) +
+  labs(title = "Crime Trend Over Time by Victim Descent", x = "Month", y = "Frequency") +
+  theme_minimal()
+  theme_minimal()
+```
+
+```{r Code Chunk-7, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+
+crime_distribution <- crime_data %>%
+  group_by(Vict.Descent) %>%
+  summarise(Frequency = n(), .groups = "drop") %>%
+  mutate(Percentage = Frequency / sum(Frequency) * 100)
+
+ggplot(crime_distribution, aes(x = "", y = Percentage, fill = Vict.Descent)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar("y") +  # Convert to pie chart
+  labs(title = "Distribution of Crimes by Victim Descent",
+       fill = "Victim Descent") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank())
+```
+
+```{r Code Chunk-8, echo=TRUE}
+library(ggplot2)
+library(dplyr)
+
+victim_counts <- crime_data %>%
+  count(Vict.Descent)
+
+ggplot(victim_counts, aes(x = Vict.Descent, y = n)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Count of Crimes by Victim Descent",
+       x = "Victim Descent",
+       y = "Count of Crimes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme_minimal()
+```
+
+```{r Code Chunk-9, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-10, echo=TRUE}
+library(dplyr)
+library(tidyr)
+
+unique_values <- unique(crime_data$Vict.Descent)
+print(unique_values)
+
+relevant_data <- crime_data %>%
+  select(LON, LAT, Vict.Descent)
+
+relevant_data$Vict.Descent <- as.factor(relevant_data$Vict.Descent)
+
+dummy_data <- model.matrix(~ Vict.Descent - 1, data = relevant_data)
+
+combined_data <- cbind(relevant_data[, c("LON", "LAT")], dummy_data)
+
+cor_matrix <- cor(combined_data, use = "pairwise.complete.obs")
+
+
+print(cor_matrix)
+```
+
+```{r Code Chunk-11, echo=TRUE}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+numeric_data <- crime_data[sapply(crime_data, is.numeric)]
+
+corr <- cor(numeric_data, use = "complete.obs")
+
+corrplot(corr, method = "color", 
+         addCoef.col = "black",
+         tl.col = "black",         
+         tl.srt = 45,               
+         number.cex = 0.9,          
+         tl.cex = 0.9,             
+         col = colorRampPalette(c("navy", "white", "firebrick3"))(200),
+         title = "Correlation Matrix", 
+         mar = c(1,1,2,1),         
+         cl.cex = 0.8,          
+         cl.pos = "r",            
+         diag = FALSE)           
+```
+
+```{r Code Chunk-12, echo=TRUE}
+ggplot(crime_data, aes(x = LON)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Longitude) by Victim Descent", 
+       x = "Longitude", 
+       y = "Density") +
+  theme_minimal()
+
+ggplot(crime_data, aes(x = LAT)) +
+  geom_density(aes(fill = Vict.Descent), alpha = 0.5) +
+  facet_wrap(~ Vict.Descent) +
+  labs(title = "Geographic Patterns of Crime (Latitude) by Victim Descent", 
+       x = "Latitude", 
+       y = "Density") +
+  theme_minimal()
+```
+
+```{r Code Chunk-13, echo=TRUE}
+anova_result_1 <- aov(LAT ~ AREA, data = crime_data)
+summary(anova_result_1)
+
+anova_result_2 <- aov(LON ~ AREA, data = crime_data)
+summary(anova_result_2)
+```
+
+```{r Code Chunk-14, echo=TRUE}
+# ANOVA for Longitude
+anova_lon <- aov(LON ~ Vict.Descent, data = crime_data)
+summary(anova_lon)
+
+# ANOVA for Latitude
+anova_lat <- aov(LAT ~ Vict.Descent, data = crime_data)
+summary(anova_lat)
+```
+
+```{r Code Chunk-15, echo=TRUE}
+# Filter data for two specific victim descent groups and non-missing lat/lon values
+geo_subset <- crime_data %>%
+  filter(Vict.Descent %in% c("H", "B"), !is.na(LAT), !is.na(LON))
+
+# Ensure the data has exactly two levels for Vict.Descent
+if (length(unique(geo_subset$Vict.Descent)) == 2) {
+  # T-test for differences in latitude and longitude between the two groups
+  latitude_t_test <- t.test(LAT ~ Vict.Descent, data = geo_subset)
+  longitude_t_test <- t.test(LON ~ Vict.Descent, data = geo_subset)
+  
+  # Display results
+  list(Latitude_Test = latitude_t_test, Longitude_Test = longitude_t_test)
+} else {
+  print("Data does not have exactly 2 groups for Vict.Descent. Please check the filtering.")
+}
+```
