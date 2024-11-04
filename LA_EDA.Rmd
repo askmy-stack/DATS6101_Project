@@ -30,9 +30,7 @@ library(ezids)
 # knitr::opts_chunk$set(warning = F, results = "markup", message = F)
 knitr::opts_chunk$set(warning = F, results = "hide", message = F)
 options(scientific=T, digits = 3) 
-# options(scipen=9, digits = 3) 
-# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
-# use scipen=999 to prevent scientific notation at all times
+
 ```
 
 # SMART QUESTIONS
@@ -1147,11 +1145,11 @@ contingency_Sex <- table(la_crime$Victim_Sex, la_crime$Crime_Description)
 contingency_descent <- table(la_crime$Victim_Descent, la_crime$Crime_Description)
 ```
 
-```{r q40, echo=T, results='markup', warning= False}
+```{r q40, echo=T, results='markup'}
 chi_squared_result <- chisq.test(contingency_Sex)
 print(chi_squared_result)
 ```
-```{r q41, echo=T, results='markup', warning= False}
+```{r q41, echo=T, results='markup'}
 chi_squared_result1 <- chisq.test(contingency_descent)
 print(chi_squared_result1)
 ```
