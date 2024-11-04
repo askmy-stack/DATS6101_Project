@@ -1155,8 +1155,7 @@ print(chi_squared_result)
 chi_squared_result1 <- chisq.test(contingency_descent)
 print(chi_squared_result1)
 ```
-There is a statistically significant association between the two categorical variables for both tests conducted between Victim Sex, Descent and Crime. Hence we can accept the alternate hypothesis that they are dependent on each other.
-
+This high value of chi-squared statistic in both tables suggests a considerable deviation between observed and expected frequencies, implying a potential association within the table. The extremely low p-value strongly rejects the null hypothesis of independence, indicating a statistically significant association between the variables in contingency_Sex and contingency_Descent. Hence we can accept the alternate hypothesis that they are dependent on each other and move on to further analysis.
 
 
 *** END OF QUESTION 5 ***
