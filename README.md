@@ -25,7 +25,8 @@ The Los Angeles Crime Dataset gives a unknown analysis of a comprehensive reposi
   2. Locations
   3. Dates
   4. Demographic data of involved individuals etc
-has a crucial resource for understanding crime patterns, along with various levels of crime dynamics throughout Los Angeles. The temporal information captured includes both reporting and occurrence dates and times, enabling sophisticated analysis of crime patterns, response times, and seasonal trends that influence criminal activity across the city.
+
+Understanding crime patterns, along with various levels of crime dynamics throughout Los Angeles. The temporal information captured includes both reporting and occurrence dates and times, enabling sophisticated analysis of crime patterns, response times, and seasonal trends that influence criminal activity across the city.
 
 The geographic granularity of the data is particularly helps in understanding specific location details through area codes, precise coordinates (latitude and longitude), and cross-street references. This spatial data facilitates detailed crime mapping and hotspot analysis, to find high-risk areas and optimize resource allocation. The dataset's crime classification system is multi-layered, utilizing primary crime codes alongside detailed descriptions and supporting codes for incidents involving multiple offenses, providing a nuanced understanding of criminal behavior patterns and severity levels.
 
