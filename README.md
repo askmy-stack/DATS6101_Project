@@ -1,5 +1,9 @@
 L.A. Crime Scene Investigation: Data-Driven Detectives
 
+# Primary Data Source:
+Los Angeles Police Department (LAPD). (2020-2024). "Crime Data from 2020 to Present." City of Los Angeles Open Data Portal.
+URL: https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8
+
 # Research Topic: - 
 The city of Los Angeles faces ongoing challenges in understanding and addressing the complexity of crime across its diverse neighborhoods. With thousands of recorded incidents varying by crime type, victim demographics, location, and modus operandi, law enforcement and city officials require deeper insights into the patterns and factors driving crime in specific areas.
 
