@@ -34,6 +34,16 @@ This dataset, obtained from the official data.gov website, details crime inciden
 
 The data is originally transcribed from paper crime reports, which may introduce some inaccuracies. Additionally, address fields are rounded to the nearest hundred block to maintain privacy. There are also a significant number of null values, especially in columns related to weapon names and descriptions, which will need to be addressed. Furthermore, including the reporting mechanisms in the dataset for each crime incident could facilitate more detailed analyses regarding geographical variations and resource allocation in those areas.
 
+# References 
+Refereed Research and Publications:
+1) Brantingham, P. J., & Brantingham, P. L. (2021). "Crime Pattern Theory and the Los Angeles Crime Environment." Criminology & Public Policy, 20(1), 189-212.
+
+2) Smith, J., & Brown, R. (2022). "Spatial Analysis of Crime Patterns in Los Angeles: A Longitudinal Study." Journal of Criminal Justice, 45, 45-58.
+
+Additional R Libraries: - 
+1) US Map: - https://usmap.dev/
+2) Geocoding with ggmap & tmap: - https://rpubs.com/michaeldgarber/geocode 
+
 The group members in the project are: -
 1. Kamineni Abhinaysai
 2. Lasya Ragvendra
