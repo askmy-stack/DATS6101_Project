@@ -5,10 +5,9 @@ Los Angeles Police Department (LAPD). (2020-2024). "Crime Data from 2020 to Pres
 URL: https://data.lacity.org/Public-Safety/Crime-Data-from-2020-to-Present/2nrs-mtv8
 
 # Research Topic: - 
-The city of Los Angeles faces ongoing challenges in understanding and addressing the complexity of crime across its diverse neighborhoods. With thousands of recorded incidents varying by crime type, victim demographics, location, and modus operandi, law enforcement and city officials require deeper insights into the patterns and factors driving crime in specific areas.
+Los Angeles faces ongoing challenges in understanding crime across its diverse neighborhoods. With thousands of recorded incidents that vary by crime type, victim demographics, location, and methods, law enforcement and city officials need better insights into the patterns and factors influencing crime in specific areas.
 
-The dataset includes detailed information on reported crimes such as crime codes, descriptions, victim age, sex, and descent, as well as crime locations, types of weapons used, and case statuses. However, identifying meaningful trends and correlations—such as how crime types vary by location, how victim demographics relate to specific crimes, and how different weapons are used in different crimes—remains a critical challenge.
-Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset containing detailed information on crime incidents.
+This real-time dataset includes detailed information on reported crimes, such as crime codes, descriptions, victim age, sex, ethnicity, crime locations, types of weapons used, and case statuses. However, identifying meaningful trends and correlations—like how crime types differ by location, how victim demographics relate to specific crimes, and how different weapons are used—remains a significant challenge. This analysis focuses on crime in Los Angeles from 2020 to the present, using a dataset with detailed information on crime incidents.
 
 # SMART Question: - 
 1) How have theft, robbery, and homicide rates in Los Angeles changed from 2020 to the present, and which of these categories shows the highest overall density of crime during this time?
