@@ -1,0 +1,158 @@
+---
+title: "L.A. Crime Scene Investigation: Data-Driven Detectives"
+author: "
+          Abhinaysai Kamineni
+          Lasya Raghavendra
+          Neeraj Magadum
+          Aakash Hariharan 
+          Amogh Ramagiri
+"
+date: "2024-12-02"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
+# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+library(ezids)
+ 
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+
+```
+
+# SMART QUESTIONS
+
+
+1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
+
+2. How can we analyze the increase in crime rates across Los Angeles neighborhoods from 2020 to 2023, using demographic factors such as the race and sex of victims to identify key patterns and potential underlying causes contributing to the rise in criminal activity?
+
+3. How effectively can crime prediction models utilize victim descent, spatial data, and temporal patterns to forecast the likelihood and type of criminal incidents in different areas of Los Angeles?
+
+4. How well can we use past data on holiday-season crimes in Los Angeles to predict where and how often the top three common crimes might happen in busy areas during November and December?
+
+5. How can we predict the likelihood of different types of weapons being used in crimes (such as  theft, robbery, and homicide) in Los Angeles over the next 24 months, using crime data from the last 4 years?
+
+
+```{r 1, echo=T, results='markup'}
+crime = read.csv("C:\\Users\\HP\\Desktop\\Mid-Term Project ASK\\Crime_Data.csv")
+head(crime)
+```
+## Date Analysis and Cleaning 0.1
+```{r 2, echo=T, results='markup'}
+nrow(crime)
+ncol(crime)
+```
+
+The dataset contains 28 columns and 986500 rows.
+
+1) DR_NO - Division of Records Number: Official file number.
+2) Date Rptd - MM/DD/YYYY
+3) DATE OCC - MM/DD/YYYY
+4) TIME OCC - In 24 hour military time
+5) AREA - The LAPD has 21 Community Police Stations referred to as Geographic Areas within the department. These Geographic Areas are sequentially numbered from 1-21.
+6) AREA NAME - The 21 Geographic Areas or Patrol Divisions are also given a name designation that references a landmark or the surrounding community that it is responsible for.
+7) Crm Cd - Indicates the crime committed. Crime Code 1 is the primary and most serious one. Crime Code 2, 3, and 4 are respectively less serious offenses. Lower crime class numbers are more serious.
+8) Crm Desc - Indicates the crime description
+9) Vict Age - Age of victim
+10) Vict Sex - 	F : Female M : Male X : Unknown
+11) Vict Descent - 	Descent Code: A - Other Asian B - Black C - Chinese D - Cambodian F - Filipino G - Guamanian H - Hispanic/Latin/Mexican I - American Indian/Alaskan Native J - Japanese K - Korean L - Laotian O - Other P - Pacific Islander S - Samoan U - Hawaiian V - Vietnamese W - White X - Unknown Z - Asian Indian
+12) Weapon Desc - Defines the Weapon Used Code provided.
+13) Location - Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
+14) LAT - Latitude
+15) LON - Longtitude
+
+
+```{r 3, echo=T, results='markup'}
+na_count <- colSums(is.na(crime))
+print("\nNA Count per Column:")
+print(na_count)
+```
+
+```{r 4, echo=T, results='markup'}
+new_crime <- crime[, colSums(is.na(crime)) == 0]
+head(new_crime)
+
+nrow(new_crime)
+ncol(new_crime)
+```
+## Removing Unwanted Columns 0.2
+```{r 5, echo=T, results='markup'}
+# Feature Selection based on Smart Questions
+
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", 
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+crime_data <- new_crime[, !(names(new_crime) %in% cols_to_remove)]
+
+
+print("Data after removing unnecessary columns:")
+print(names(crime_data))
+```
+
+```{r 6, echo=T, results='markup'}
+# Date/Time Processing.
+crime_data$Date_Rptd <- as.POSIXct(crime_data$Date.Rptd, format="%m/%d/%Y")
+crime_data$Date_Occ <- as.POSIXct(crime_data$DATE.OCC, format="%m/%d/%Y")
+
+crime_data$day_of_week <- weekdays(crime_data$Date_Occ)
+crime_data$hour <- floor(crime_data$TIME.OCC/100)
+crime_data$time_to_report <- as.numeric(difftime(crime_data$Date_Rptd, crime_data$Date_Occ, units="days"))
+```
+
+```{r 7, echo=T, results='markup'}
+# Feature Level Engineering of Preprocessing.
+crime_data$has_weapon <- ifelse(crime_data$Weapon.Desc == "STRONG-ARM (HANDS, FIST, FEET OR BODILY FORCE)", 0, 1)
+
+crime_data$age_group <- cut(crime_data$Vict.Age, 
+                           breaks=c(0, 18, 30, 50, 70, 100),
+                           labels=c("Minor", "Young Adult", "Adult", "Senior", "Elderly"))
+
+crime_data$time_period <- cut(crime_data$hour, 
+                             breaks=c(0, 6, 12, 18, 24),
+                             labels=c("Night", "Morning", "Afternoon", "Evening"))
+```
+
+```{r 8, echo=T, results='markup'}
+# Categorical Encoding
+#install.packages("caret")
+library(caret)
+dummy_vars <- dummyVars(" ~ AREA.NAME + Vict.Sex + Crm.Cd.Desc", data = crime_data)
+categorical_encoded <- predict(dummy_vars, newdata = crime_data)
+crime_data_encoded <- cbind(crime_data, categorical_encoded)
+```
+
+
+```{r 9, echo=T, results='markup'}
+# Outlier Detection
+q1_age <- quantile(crime_data$Vict.Age, 0.25)
+q3_age <- quantile(crime_data$Vict.Age, 0.75)
+iqr_age <- q3_age - q1_age
+crime_data$age_outlier <- crime_data$Vict.Age < (q1_age - 1.5 * iqr_age) | 
+                         crime_data$Vict.Age > (q3_age + 1.5 * iqr_age)
+
+crime_data$coord_outlier <- crime_data$LAT < 33.7037 | crime_data$LAT > 34.3373 |
+                           crime_data$LON < -118.6682 | crime_data$LON > -118.1553
+
+crime_data$reporting_outlier <- crime_data$time_to_report > 365
+
+crime_data_clean <- crime_data[!crime_data$age_outlier & 
+                              !crime_data$coord_outlier & 
+                              !crime_data$reporting_outlier, ]
+```
