@@ -35,7 +35,6 @@ options(scientific=T, digits = 3)
 
 # SMART QUESTIONS
 
-
 1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
 
 2. How can we analyze the increase in crime rates across Los Angeles neighborhoods from 2020 to 2023, using demographic factors such as the race and sex of victims to identify key patterns and potential underlying causes contributing to the rise in criminal activity?
@@ -48,7 +47,7 @@ options(scientific=T, digits = 3)
 
 
 ```{r 1, echo=T, results='markup'}
-crime = read.csv("C:\\Users\\HP\\Desktop\\Mid-Term Project ASK\\Crime_Data.csv")
+crime = read.csv("Crime_Data.csv")
 head(crime)
 ```
 ## Date Analysis and Cleaning 0.1
@@ -156,3 +155,42 @@ crime_data_clean <- crime_data[!crime_data$age_outlier &
                               !crime_data$coord_outlier & 
                               !crime_data$reporting_outlier, ]
 ```
+
+## Data Cleaning 0.2
+```{r 10, echo=T, results='markup'}
+la_crime <- crime %>%
+  filter(!is.na(Weapon.Used.Cd))
+
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", "Crm.Cd.2","Crm.Cd.3","Crm.Cd.4",
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+la_crime<- la_crime[, !(names(la_crime) %in% cols_to_remove)]
+
+la_crime <- la_crime %>% rename(
+  Division_NO = 'DR_NO',
+  Date_Reported = 'Date.Rptd',
+  Date_Occurred = 'DATE.OCC',
+  Time_Occurred = 'TIME.OCC',
+  Area_Code = 'AREA',
+  Area_Name = 'AREA.NAME',
+  Crime_Code = 'Crm.Cd',
+  Crime_Description = 'Crm.Cd.Desc',
+  Weapons_Used='Weapon.Used.Cd',    
+  Weapons_Description='Weapon.Desc',
+  Victim_Age = 'Vict.Age',
+  Victim_Sex = 'Vict.Sex',
+  Victim_Descent = 'Vict.Descent',
+  Crime_Code_1 = 'Crm.Cd',
+  Location = 'LOCATION',
+  Latitude = 'LAT',
+  Longitude = 'LON'
+)
+
+la_crime <- la_crime %>%
+  filter(Victim_Sex != "H")
+
+```
+
