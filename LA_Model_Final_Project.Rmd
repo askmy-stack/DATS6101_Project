@@ -167,16 +167,18 @@ crime_data_clean <- crime_data[!crime_data$age_outlier &
 
 ## Data Cleaning 0.2
 ```{r 10, echo=T, results='markup'}
+library(dplyr)
 la_crime <- crime %>%
-  filter(!is.na(Weapon.Used.Cd))
+  filter(!is.na('Weapon.Used.Cd'))
 
-cols_to_remove <- c(
-   "Mocodes", "Rpt.Dist.No", "Part.1.2", "Crm.Cd.2","Crm.Cd.3","Crm.Cd.4",
-  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
-)
+cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2", 
+                    "Crm.Cd.2", "Crm.Cd.3", "Crm.Cd.4",
+                    "Premis.Cd", "Premis.Desc", "Status",
+                    "Status.Desc", "Cross.Street")
 
-# Drop the specified columns
-la_crime<- la_crime[, !(names(la_crime) %in% cols_to_remove)]
+la_crime <- la_crime %>% select(-all_of(cols_to_remove))
+
+
 
 la_crime <- la_crime %>% rename(
   Division_NO = 'DR_NO',
