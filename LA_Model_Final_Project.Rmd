@@ -205,3 +205,141 @@ la_crime <- la_crime %>%
 
 ```
 
+```{r}
+library(dplyr)
+library(lubridate)
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+# Identify top 3 crimes overall from 2020 to present
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023 ) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+top_crime_locations <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, AREA.NAME) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+
+
+# Analyze temporal patterns
+top_crime_temporal <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  mutate(month = month(Date_Occ),
+         day_of_week = wday(Date_Occ, label = TRUE)) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, month, day_of_week) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+# Analyze demographic factors
+top_crime_demographics <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, Vict.Sex, Vict.Descent) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+```
+
+```{r}
+top_crimes
+top_crime_locations
+
+top_crime_temporal
+top_crime_demographics
+```
+
+
+```{r}
+memory.limit(size = 8000) # Set memory limit to 8 GB (adjust if needed)
+library(randomForest)
+library(caret)
+
+# Prepare the data
+crime_data_rf <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023) %>%
+  mutate(
+    month = month(Date_Occ),
+    day_of_week = as.factor(wday(Date_Occ)),
+    AREA.NAME = as.factor(AREA.NAME),
+    Vict.Sex = as.factor(Vict.Sex),
+    Crm.Cd = as.factor(Crm.Cd)
+  )
+
+# Create feature matrix and target variable
+X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex)
+y <- crime_data_rf$Crm.Cd
+
+# Split the data
+set.seed(42)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+X_test <- X[-train_index, ]
+y_train <- y[train_index]
+y_test <- y[-train_index]
+
+# Train Random Forest model
+rf_model <- randomForest(x = X_train, y = y_train, ntree = 500)
+
+# Make predictions
+y_pred <- predict(rf_model, X_test)
+
+# Calculate accuracy
+accuracy <- sum(y_pred == y_test) / length(y_test)
+accuracy_percentage <- accuracy * 100
+
+print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
+```
+
+
+```{r}
+library(prophet)
+library(dplyr)
+
+# Assuming crime_data is your preprocessed dataset
+# Filter for top 3 crimes from 2020 to 2023
+top_3_crimes <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% c(624, 510, 310))  # Vehicle Stolen, Battery - Simple Assault, Burglary
+
+# Prepare data for Prophet
+crime_ts <- top_3_crimes %>%
+  group_by(Date_Occ, AREA.NAME, Crm.Cd) %>%
+  summarise(y = n()) %>%
+  rename(ds = Date_Occ)
+
+# Create and fit Prophet models for each crime type and area
+areas <- unique(crime_ts$AREA.NAME)
+crime_types <- unique(crime_ts$Crm.Cd)
+forecasts <- list()
+
+for (area in areas) {
+  for (crime in crime_types) {
+    data <- crime_ts %>% 
+      filter(AREA.NAME == area, Crm.Cd == crime) %>%
+      select(ds, y)
+    
+    if (nrow(data) > 0) {
+      m <- prophet(data)
+      future <- make_future_dataframe(m, periods = 365)
+      forecast <- predict(m, future)
+      forecasts[[paste(area, crime)]] <- forecast
+    }
+  }
+}
+
+# Example: Plot forecast for a specific area and crime type
+plot(m, forecasts[["Hollywood 510"]])
+```
+
+```{r}
+
+plot(m, forecasts[["Pacific 624"]])
+```
