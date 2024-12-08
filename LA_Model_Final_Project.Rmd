@@ -257,9 +257,12 @@ top_crime_demographics
 ```
 
 
+
 ```{r}
 library(randomForest)
 library(caret)
+age_zero_count <- nrow(crime_data[crime_data$Vict.Age == 0, ])
+print(paste("Number of rows with Vict.Age as zero:", age_zero_count))
 
 crime_data_rf <- crime_data %>%
   filter(
@@ -269,15 +272,13 @@ crime_data_rf <- crime_data %>%
     day_of_week = as.factor(wday(Date_Occ)),
     AREA.NAME = as.factor(AREA.NAME),
     Vict.Sex = as.factor(Vict.Sex),
-    Crm.Cd = as.factor(Crm.Cd),
-  ) %>% 
-filter(Vict.Age > 0, !is.na(LAT), !is.na(LON))
-
+    Crm.Cd = as.factor(Crm.Cd)
+  )
 dim(crime_data_rf)
 
 
 # Create feature matrix and target variable
-X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex, Vict.Age, LAT, LON)
+X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex,Vict.Age, LAT, LON)
 y <- crime_data_rf$Crm.Cd
 
 # Split the data
