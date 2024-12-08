@@ -258,23 +258,26 @@ top_crime_demographics
 
 
 ```{r}
-memory.limit(size = 8000) # Set memory limit to 8 GB (adjust if needed)
 library(randomForest)
 library(caret)
 
-# Prepare the data
 crime_data_rf <- crime_data %>%
-  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023) %>%
+  filter(
+    year(Date_Occ) >= 2020 & year(Date_Occ) <=2023) %>%
   mutate(
     month = month(Date_Occ),
     day_of_week = as.factor(wday(Date_Occ)),
     AREA.NAME = as.factor(AREA.NAME),
     Vict.Sex = as.factor(Vict.Sex),
-    Crm.Cd = as.factor(Crm.Cd)
-  )
+    Crm.Cd = as.factor(Crm.Cd),
+  ) %>% 
+filter(Vict.Age > 0, !is.na(LAT), !is.na(LON))
+
+dim(crime_data_rf)
+
 
 # Create feature matrix and target variable
-X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex)
+X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex, Vict.Age, LAT, LON)
 y <- crime_data_rf$Crm.Cd
 
 # Split the data
@@ -296,50 +299,4 @@ accuracy <- sum(y_pred == y_test) / length(y_test)
 accuracy_percentage <- accuracy * 100
 
 print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
-```
-
-
-```{r}
-library(prophet)
-library(dplyr)
-
-# Assuming crime_data is your preprocessed dataset
-# Filter for top 3 crimes from 2020 to 2023
-top_3_crimes <- crime_data %>%
-  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
-         Crm.Cd %in% c(624, 510, 310))  # Vehicle Stolen, Battery - Simple Assault, Burglary
-
-# Prepare data for Prophet
-crime_ts <- top_3_crimes %>%
-  group_by(Date_Occ, AREA.NAME, Crm.Cd) %>%
-  summarise(y = n()) %>%
-  rename(ds = Date_Occ)
-
-# Create and fit Prophet models for each crime type and area
-areas <- unique(crime_ts$AREA.NAME)
-crime_types <- unique(crime_ts$Crm.Cd)
-forecasts <- list()
-
-for (area in areas) {
-  for (crime in crime_types) {
-    data <- crime_ts %>% 
-      filter(AREA.NAME == area, Crm.Cd == crime) %>%
-      select(ds, y)
-    
-    if (nrow(data) > 0) {
-      m <- prophet(data)
-      future <- make_future_dataframe(m, periods = 365)
-      forecast <- predict(m, future)
-      forecasts[[paste(area, crime)]] <- forecast
-    }
-  }
-}
-
-# Example: Plot forecast for a specific area and crime type
-plot(m, forecasts[["Hollywood 510"]])
-```
-
-```{r}
-
-plot(m, forecasts[["Pacific 624"]])
 ```
