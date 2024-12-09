@@ -83,7 +83,6 @@ The dataset contains 28 columns and 986500 rows.
 14) LAT - Latitude
 15) LON - Longtitude
 
-
 ```{r 3, echo=T, results='markup'}
 na_count <- colSums(is.na(crime))
 print("\nNA Count per Column:")
@@ -228,8 +227,17 @@ la_crime_clean <- na.omit(la_crime) #Deleting the null values
 
 
 ```{r}
-head(la_crime_clean)
+la_crime_clean
 ```
+
+```{r}
+value_counts <- table(la_crime_clean$Crime_Description)
+#unique_count <- length(unique(la_crime_clean$Victim_Age))
+print(value_counts)
+```
+
+
+
 ```{r}
 # Extract year, month, and day
 la_crime_data1 <- la_crime_clean %>%
@@ -244,8 +252,103 @@ la_crime_data1 <- la_crime_clean %>%
 head(la_crime_data1)
 
 ```
+
+
+```{r}
+# Define a list of violent and non-violent crimes
+violent_crimes <- c("ASSAULT WITH DEADLY WEAPON ON POLICE OFFICER", 
+                    "ASSAULT WITH DEADLY WEAPON, AGGRAVATED ASSAULT","ATTEMPTED ROBBERY", 
+                    "BATTERY - SIMPLE ASSAULT", 
+                    "BATTERY ON A FIREFIGHTER",
+                    "BATTERY POLICE (SIMPLE)", 
+                    "BATTERY WITH SEXUAL CONTACT",
+                    "BEASTIALITY, CRIME AGAINST NATURE SEXUAL ASSLT WITH ANIM",
+                    "CRIMINAL HOMICIDE", 
+                    "RAPE, FORCIBLE", 
+                    "ROBBERY","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                    "KIDNAPPING", 
+                    "SEXUAL PENETRATION W/FOREIGN OBJECT", 
+                    "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ",
+                    "INTIMATE PARTNER - AGGRAVATED ASSAULT",
+                    "INTIMATE PARTNER - SIMPLE ASSAULT", "DRUNK ROLL",
+                    "CHILD ABUSE (PHYSICAL) - AGGRAVATED ASSAULT",
+                    "STRONG-ARM (HANDS,FIST,FEET OR BODILY FORCE)","HUMAN TRAFFICKING - COMMERCIAL SEX ACTS", 
+                    "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE", "INCEST (SEXUAL ACTS BETWEEN BLOOD RELATIVES)", 
+                    "INCITING A RIOT","SHOTS FIRED AT INHABITED DWELLING", 
+                        "SHOTS FIRED AT MOVING VEHICLE, TRAIN OR AIRCRAFT",
+                    "ORAL COPULATION","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT","REPLICA FIREARMS(SALE,DISPLAY,MANUFACTURE OR DISTRIBUTE)","SEX OFFENDER REGISTRANT OUT OF COMPLIANCE", 
+                        "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ)","CRM AGNST CHLD (13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)","BOMB SCARE","EXTORTION","PANDERING",
+                    "CRM AGNST CHLD(13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)", "RAPE, ATTEMPTED",
+                    "MANSLAUGHTER, NEGLIGENT", "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE",
+                    "SODOMY/SEXUAL CONTACT B/W PENIS OF ONE PERS TO ANUS OTH",
+                    "LEWD/LASCIVIOUS ACTS WITH CHILD","RAPE, ATTEMPTED","PIMPING","PROWLER",
+                    "WEAPONS POSSESSION/BOMBING","LYNCHING", "LYNCHING - ATTEMPTED",
+                    "HUMAN TRAFFICKING - COMMERCIAL SEX ACTS")
+
+non_violent_crimes <- c("ARSON", "BIKE - STOLEN", "BURGLARY", 
+                        "BURGLARY FROM VEHICLE", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", 
+                        "VANDALISM - FELONY", "VANDALISM - MISDEAMEANOR", "PICKPOCKET","TELEPHONE PROPERTY - DAMAGE", "THEFT FROM MOTOR VEHICLE - ATTEMPT",
+                        "THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)","BURGLARY, ATTEMPTED", 
+                        "CHILD ABANDONMENT", "CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                        "CHILD ANNOYING (17YRS & UNDER)", "CHILD NEGLECT (SEE 300 W.I.C.)","RECKLESS DRIVING", 
+                        "CHILD PORNOGRAPHY", "CHILD STEALING", "CONSPIRACY", "CONTEMPT OF COURT", 
+                        "CONTRIBUTING", "COUNTERFEIT", "CREDIT CARDS, FRAUD USE ($950 & UNDER)", 
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED", "CRM AGNST CHLD (13 OR UNDER)",  
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)","CRUELTY TO ANIMALS","LETTERS, LEWD  -  TELEPHONE CALLS, LEWD", "RESISTING ARREST", "ROBBERY","SHOPLIFTING - ATTEMPT", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", "SHOPLIFTING-GRAND THEFT ($950.01 & OVER)",
+                        "LEWD CONDUCT", "LEWD/LASCIVIOUS ACTS WITH CHILD", "PEEPING TOM", "PICKPOCKET", 
+                        "PICKPOCKET, ATTEMPT", "PURSE SNATCHING",  "PURSE SNATCHING - ATTEMPT",
+                        "THEFT PLAIN - PETTY ($950 & UNDER)", "DEFRAUDING INNKEEPER/THEFT OF SERVICES, $950 & UNDER", 
+                        "DEFRAUDING INNKEEPER/THEFT OF SERVICES, OVER $950.01", "DISHONEST EMPLOYEE - PETTY THEFT", 
+                        "DISRUPT SCHOOL", "DISTURBING THE PEACE", "DOCUMENT FORGERY / STOLEN FELONY", 
+                        "DRIVING WITHOUT OWNER CONSENT (DWOC)","EMBEZZLEMENT, GRAND THEFT ($950.01 & OVER)", 
+                        "EMBEZZLEMENT, PETTY THEFT ($950 & UNDER)", "FAILURE TO YIELD", 
+                        "FALSE IMPRISONMENT", "FALSE POLICE REPORT", "FIREARMS EMERGENCY PROTECTIVE ORDER (FIREARMS EPO)", "GRAND THEFT / INSURANCE FRAUD","THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)", 
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)", "THEFT FROM PERSON - ATTEMPT", 
+                        "THEFT OF IDENTITY", "THEFT PLAIN - ATTEMPT", 
+                        "THEFT-GRAND ($950.01 & OVER)EXCPT,GUNS,FOWL,LIVESTK,PROD",
+                        "THEFT FROM PERSON - ATTEMPT", "PICKPOCKET","THEFT, COIN MACHINE - ATTEMPT", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)", 
+                        "THEFT, COIN MACHINE - PETTY ($950 & UNDER)", "THEFT, PERSON", 
+                        "THREATENING PHONE CALLS/LETTERS", "THROWING OBJECT AT MOVING VEHICLE", 
+                        "TILL TAP - PETTY ($950 & UNDER)", "TRAIN WRECKING", "TRESPASSING", 
+                        "UNAUTHORIZED COMPUTER ACCESS", "VANDALISM - FELONY ($400 & OVER, ALL CHURCH VANDALISMS)", 
+                        "VANDALISM - MISDEAMEANOR ($399 OR UNDER)", "VEHICLE - ATTEMPT STOLEN", 
+                        "VEHICLE - STOLEN", "VEHICLE, STOLEN - OTHER (MOTORIZED SCOOTERS, BIKES, ETC)", 
+                        "VIOLATION OF COURT ORDER", "VIOLATION OF RESTRAINING ORDER", 
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","BURGLARY FROM VEHICLE, ATTEMPTED",
+                        "OTHER MISCELLANEOUS CRIME","CONTEMPT OF COURT","BUNCO, PETTY THEFT",
+                        "DISCHARGE FIREARMS/SHOTS FIRED", "STALKING","VANDALISM - MISDEAMEANOR ($399 OR UNDER)","OTHER ASSAULT","BUNCO, GRAND THEFT","INDECENT EXPOSURE","KIDNAPPING - GRAND ATTEMPT","BUNCO, ATTEMPT","CREDIT CARDS, FRAUD USE ($950 & UNDER",
+                        "TILL TAP - PETTY ($950 & UNDER)","VIOLATION OF COURT ORDER",
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","VIOLATION OF RESTRAINING ORDER",
+                        "BRANDISH WEAPON","THREATENING PHONE CALLS/LETTERS",
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED","CHILD ANNOYING (17YRS & UNDER)",
+                        "TRESPASSING", "FRAUD USE ($950 & UNDER)","	LETTERS, LEWD - TELEPHONE CALLS, LEWD", 
+                        "THEFT OF IDENTITY", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)")
 ```
 
+```{r}
+la_crime_clean$Crime_Type <- ifelse(la_crime_clean$Crime_Description %in% violent_crimes, "Violent", 
+                                           ifelse(la_crime_clean$Crime_Description %in% non_violent_crimes, "Non-Violent", "Other"))
+```
+
+```{r}
+la_crime_clean
+```
+
+```{r}
+crime_counts <- table(la_crime_clean$Crime_Type)
+
+# View the total counts
+print(crime_counts)
+
+other_crimes <- la_crime_clean[la_crime_clean$Crime_Type == "Other", ]
+
+
+
+# View the list of crimes classified as "Other"
+print("List of 'Other' Crimes:")
+print(other_crimes)
+
+```
 
 
 
