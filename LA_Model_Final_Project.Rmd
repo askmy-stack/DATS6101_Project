@@ -56,7 +56,7 @@ Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset cont
 
 
 ```{r 1, echo=T, results='markup'}
-crime = read.csv("Crime_Data.csv")
+crime = read.csv("Crime_Data_from_2020_to_Present.csv")
 head(crime)
 ```
 ## Date Analysis and Cleaning 0.1
@@ -169,17 +169,18 @@ crime_data_clean <- crime_data[!crime_data$age_outlier &
 ```{r 10, echo=T, results='markup'}
 library(dplyr)
 la_crime <- crime %>%
-  filter(!is.na('Weapon.Used.Cd'))
+  filter(!is.na(Weapon.Used.Cd))
 
-cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2", 
+cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2","Crm.Cd.1", 
                     "Crm.Cd.2", "Crm.Cd.3", "Crm.Cd.4",
                     "Premis.Cd", "Premis.Desc", "Status",
                     "Status.Desc", "Cross.Street")
 
 la_crime <- la_crime %>% select(-all_of(cols_to_remove))
+```
 
 
-
+```{r 11, echo=T, results='markup'}
 la_crime <- la_crime %>% rename(
   Division_NO = 'DR_NO',
   Date_Reported = 'Date.Rptd',
@@ -194,7 +195,7 @@ la_crime <- la_crime %>% rename(
   Victim_Age = 'Vict.Age',
   Victim_Sex = 'Vict.Sex',
   Victim_Descent = 'Vict.Descent',
-  Crime_Code_1 = 'Crm.Cd',
+  #Crime_Code_1 = 'Crm.Cd',
   Location = 'LOCATION',
   Latitude = 'LAT',
   Longitude = 'LON'
@@ -204,4 +205,84 @@ la_crime <- la_crime %>%
   filter(Victim_Sex != "H")
 
 ```
+
+```{r}
+head(la_crime)
+```
+
+```{r}
+la_crime$Date_Occurred <- sub(" .*", "", la_crime$Date_Occurred)
+la_crime$Date_Occurred <- as.Date(la_crime$Date_Occurred, format = "%m/%d/%Y")
+
+la_crime$Date_Reported <- sub(" .*", "", la_crime$Date_Reported)
+la_crime$Date_Reported <- as.Date(la_crime$Date_Reported, format = "%m/%d/%Y")
+```
+
+```{r}
+# Extract year, month, and day
+la_crime_data1 <- la_crime %>%
+  mutate(Year_Occurred = year(Date_Occurred),
+         Month_Occurred = month(Date_Occurred),
+         Day_Occurred = day(Date_Occurred))
+```
+
+
+```{r}
+# View structure
+head(la_crime_data1)
+
+```
+
+
+
+
+# Part 2 - Classification
+```{r}
+la_crime[la_crime == ""] <- NA #Changing the empty strings to null values
+```
+
+```{r}
+la_crime_clean <- na.omit(la_crime) #Deleting the null values
+```
+
+
+```{r}
+head(la_crime_clean)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
