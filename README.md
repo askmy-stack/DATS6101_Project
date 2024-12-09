@@ -21,7 +21,7 @@ This real-time dataset includes detailed information on reported crimes, such as
 2) How can we analyze the increase in crime rates across Los Angeles neighborhoods from 2020 to 2023, using demographic factors such as the race and sex of victims to identify key patterns and potential underlying causes contributing to the rise in criminal activity?
 3) How effectively can crime prediction models utilize victim descent, spatial data, and temporal patterns to forecast the likelihood and type of criminal incidents in different areas of Los Angeles?
 4) How well can we use past data on holiday-season crimes in Los Angeles to predict where and how often the top three common crimes might happen in busy areas during November and December?
-5) How can we predict the likelihood of different types of weapons being used in crimes (such as  theft, robbery, and homicide) in Los Angeles over the next 24 months, using crime data from the last 4 years?
+5) How can we use factors like area, victim demographics, and weapons types, to predict whether a crime is violent or non-violent, and forecast the trend of violent crime incidents over the next two years? 
 
 # Introduction :
 The Los Angeles Crime Dataset gives a unknown analysis of a comprehensive repository of criminal incidents from 2020 to the present, encompassing approximately 986,000 detailed records across 19 columns after preprocessing it the data serves key details which include: -
