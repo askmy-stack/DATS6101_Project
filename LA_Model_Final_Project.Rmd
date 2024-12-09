@@ -262,10 +262,11 @@ top_crime_demographics
 library(randomForest)
 library(caret)
 crime_data <- crime_data[crime_data$Vict.Age != 0, ]
-crime_data <- crime_data %>% filter(LAT == 0 | LON == 0)
+crime_data <- crime_data %>% filter(LAT != 0 | LON != 0)
 
 crime_data_rf <- crime_data %>%
   filter(
+    Crm.Cd %in% c(510, 624, 354),
     year(Date_Occ) >= 2020 & year(Date_Occ) <=2023) %>%
   mutate(
     month = month(Date_Occ),
@@ -311,4 +312,11 @@ print(paste("Number of rows where LAT or LON is zero:", nrow(zero_lat_lon_rows))
 
 # Display the rows (optional)
 head(zero_lat_lon_rows)
+```
+
+
+```{r}
+
+dim(crime_data)
+
 ```
