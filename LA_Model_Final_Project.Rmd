@@ -205,6 +205,11 @@ la_crime <- la_crime %>%
 
 ```
 
+
+SMART Question
+
+1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
+
 ```{r}
 library(dplyr)
 library(lubridate)
@@ -261,10 +266,13 @@ top_crime_demographics
 ```{r}
 library(randomForest)
 library(caret)
-crime_data <- crime_data[crime_data$Vict.Age != 0, ]
-crime_data <- crime_data %>% filter(LAT != 0 | LON != 0)
+library(lubridate)
+library(dplyr)
 
-crime_data_rf <- crime_data %>%
+crime_data_new <- crime_data_new[crime_data$Vict.Age != 0, ]
+crime_data_new <- crime_data_new %>% filter(LAT != 0 | LON != 0)
+
+crime_data_rf <- crime_data_new %>%
   filter(
     Crm.Cd %in% c(510, 624, 354),
     year(Date_Occ) >= 2020 & year(Date_Occ) <=2023) %>%
@@ -303,20 +311,3 @@ accuracy_percentage <- accuracy * 100
 print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
 ```
 
-```{r}
-# Check rows where LAT or LON is zero
-zero_lat_lon_rows <- crime_data %>% filter(LAT == 0 | LON == 0)
-
-# Display the number of such rows
-print(paste("Number of rows where LAT or LON is zero:", nrow(zero_lat_lon_rows)))
-
-# Display the rows (optional)
-head(zero_lat_lon_rows)
-```
-
-
-```{r}
-
-dim(crime_data)
-
-```
