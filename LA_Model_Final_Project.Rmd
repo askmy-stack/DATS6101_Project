@@ -52,7 +52,7 @@ Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset cont
 
 4. How well can we use past data on holiday-season crimes in Los Angeles to predict where and how often the top three common crimes might happen in busy areas during November and December?
 
-5. How can we predict the likelihood of different types of weapons being used in crimes (such as  theft, robbery, and homicide) in Los Angeles over the next 24 months, using crime data from the last 4 years?
+5. How can we use historical data to predict whether a crime is violent or non-violent, and forecast the trend of violent crime incidents over the next two years?
 
 
 ```{r 1, echo=T, results='markup'}
@@ -567,6 +567,7 @@ Interpretation:
 violent_data <- la_crime_clean %>% filter(Crime_Type == "Violent")
 ```
 
+
 ```{r}
 library(lubridate)
 # Create a new column for month and year
@@ -593,7 +594,7 @@ plot(violent_ts, main = "Monthly Violent Crimes", ylab = "Number of Violent Crim
 library(forecast)
 
 # Fit the ARIMA model
-arima_model <- auto.arima(violent_ts)
+arima_model <- auto.arima(violent_ts,seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
 
 # Print the summary of the model
 summary(arima_model)
