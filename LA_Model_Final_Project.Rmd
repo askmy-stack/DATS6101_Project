@@ -1,0 +1,434 @@
+---
+title: "L.A. Crime Scene Investigation: Data-Driven Detectives"
+author: "
+          Abhinaysai Kamineni
+          Lasya Raghavendra
+          Neeraj Magadum
+          Aakash Hariharan 
+          Amogh Ramagiri
+"
+date: "2024-12-02"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
+# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+library(ezids)
+ 
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+
+```
+
+# ABSTRACT
+
+The city of Los Angeles faces ongoing challenges in understanding and addressing the complexity of crime across its diverse neighborhoods. With thousands of recorded incidents varying by crime type, victim demographics, location, and modus operandi, law enforcement and city officials require deeper insights into the patterns and factors driving crime in specific areas.
+
+The dataset includes detailed information on reported crimes such as crime codes, descriptions, victim age, sex, and descent, as well as crime locations, types of weapons used, and case statuses. However, identifying meaningful trends and correlations—such as how crime types vary by location, how victim demographics relate to specific crimes, and how different weapons are used in different crimes—remains a critical challenge.
+
+Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset containing detailed information on crime incidents.
+
+
+# SMART QUESTIONS
+
+1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
+
+2. How can we analyze the increase in crime rates across Los Angeles neighborhoods from 2020 to 2023, using demographic factors such as the race and sex of victims to identify key patterns and potential underlying causes contributing to the rise in criminal activity?
+
+3. How effectively can crime prediction models utilize victim descent, spatial data, and temporal patterns to forecast the likelihood and type of criminal incidents in different areas of Los Angeles?
+
+4. How well can we use past data on holiday-season crimes in Los Angeles to predict where and how often the top three common crimes might happen in busy areas during November and December?
+
+5. How can we predict the likelihood of different types of weapons being used in crimes (such as  theft, robbery, and homicide) in Los Angeles over the next 24 months, using crime data from the last 4 years?
+
+
+```{r 1, echo=T, results='markup'}
+crime = read.csv("/Users/amoghramagiri/Documents/mid_term_project/DATS6101_Project/Crime_Data.csv")
+head(crime)
+```
+## Date Analysis and Cleaning 0.1
+```{r 2, echo=T, results='markup'}
+nrow(crime)
+ncol(crime)
+```
+
+The dataset contains 28 columns and 986500 rows.
+
+1) DR_NO - Division of Records Number: Official file number.
+2) Date Rptd - MM/DD/YYYY
+3) DATE OCC - MM/DD/YYYY
+4) TIME OCC - In 24 hour military time
+5) AREA - The LAPD has 21 Community Police Stations referred to as Geographic Areas within the department. These Geographic Areas are sequentially numbered from 1-21.
+6) AREA NAME - The 21 Geographic Areas or Patrol Divisions are also given a name designation that references a landmark or the surrounding community that it is responsible for.
+7) Crm Cd - Indicates the crime committed. Crime Code 1 is the primary and most serious one. Crime Code 2, 3, and 4 are respectively less serious offenses. Lower crime class numbers are more serious.
+8) Crm Desc - Indicates the crime description
+9) Vict Age - Age of victim
+10) Vict Sex - 	F : Female M : Male X : Unknown
+11) Vict Descent - 	Descent Code: A - Other Asian B - Black C - Chinese D - Cambodian F - Filipino G - Guamanian H - Hispanic/Latin/Mexican I - American Indian/Alaskan Native J - Japanese K - Korean L - Laotian O - Other P - Pacific Islander S - Samoan U - Hawaiian V - Vietnamese W - White X - Unknown Z - Asian Indian
+12) Weapon Desc - Defines the Weapon Used Code provided.
+13) Location - Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
+14) LAT - Latitude
+15) LON - Longtitude
+
+
+```{r 3, echo=T, results='markup'}
+na_count <- colSums(is.na(crime))
+print("\nNA Count per Column:")
+print(na_count)
+```
+
+```{r 4, echo=T, results='markup'}
+new_crime <- crime[, colSums(is.na(crime)) == 0]
+head(new_crime)
+
+nrow(new_crime)
+ncol(new_crime)
+```
+## Removing Unwanted Columns 0.2
+```{r 5, echo=T, results='markup'}
+# Feature Selection based on Smart Questions
+
+cols_to_remove <- c(
+   "Mocodes", "Rpt.Dist.No", "Part.1.2", 
+  "Premis_cd","Premis.Desc", "Status", "Status.Desc","Cross.Street"
+)
+
+# Drop the specified columns
+crime_data <- new_crime[, !(names(new_crime) %in% cols_to_remove)]
+
+
+print("Data after removing unnecessary columns:")
+print(names(crime_data))
+```
+
+```{r 6, echo=T, results='markup'}
+# Date/Time Processing.
+crime_data$Date_Rptd <- as.POSIXct(crime_data$Date.Rptd, format="%m/%d/%Y")
+crime_data$Date_Occ <- as.POSIXct(crime_data$DATE.OCC, format="%m/%d/%Y")
+
+crime_data$day_of_week <- weekdays(crime_data$Date_Occ)
+crime_data$hour <- floor(crime_data$TIME.OCC/100)
+crime_data$time_to_report <- as.numeric(difftime(crime_data$Date_Rptd, crime_data$Date_Occ, units="days"))
+```
+
+```{r 7, echo=T, results='markup'}
+# Feature Level Engineering of Preprocessing.
+crime_data$has_weapon <- ifelse(crime_data$Weapon.Desc == "STRONG-ARM (HANDS, FIST, FEET OR BODILY FORCE)", 0, 1)
+
+crime_data$age_group <- cut(crime_data$Vict.Age, 
+                           breaks=c(0, 18, 30, 50, 70, 100),
+                           labels=c("Minor", "Young Adult", "Adult", "Senior", "Elderly"))
+
+crime_data$time_period <- cut(crime_data$hour, 
+                             breaks=c(0, 6, 12, 18, 24),
+                             labels=c("Night", "Morning", "Afternoon", "Evening"))
+```
+
+```{r 8, echo=T, results='markup'}
+# Categorical Encoding
+#install.packages("caret")
+library(caret)
+dummy_vars <- dummyVars(" ~ AREA.NAME + Vict.Sex + Crm.Cd.Desc", data = crime_data)
+categorical_encoded <- predict(dummy_vars, newdata = crime_data)
+crime_data_encoded <- cbind(crime_data, categorical_encoded)
+```
+
+
+```{r 9, echo=T, results='markup'}
+# Outlier Detection
+q1_age <- quantile(crime_data$Vict.Age, 0.25)
+q3_age <- quantile(crime_data$Vict.Age, 0.75)
+iqr_age <- q3_age - q1_age
+crime_data$age_outlier <- crime_data$Vict.Age < (q1_age - 1.5 * iqr_age) | 
+                         crime_data$Vict.Age > (q3_age + 1.5 * iqr_age)
+
+crime_data$coord_outlier <- crime_data$LAT < 33.7037 | crime_data$LAT > 34.3373 |
+                           crime_data$LON < -118.6682 | crime_data$LON > -118.1553
+
+crime_data$reporting_outlier <- crime_data$time_to_report > 365
+
+crime_data_clean <- crime_data[!crime_data$age_outlier & 
+                              !crime_data$coord_outlier & 
+                              !crime_data$reporting_outlier, ]
+```
+
+## Data Cleaning 0.2
+```{r 10, echo=T, results='markup'}
+library(dplyr)
+la_crime <- crime %>%
+  filter(!is.na('Weapon.Used.Cd'))
+
+cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2", 
+                    "Crm.Cd.2", "Crm.Cd.3", "Crm.Cd.4",
+                    "Premis.Cd", "Premis.Desc", "Status",
+                    "Status.Desc", "Cross.Street")
+
+la_crime <- la_crime %>% select(-all_of(cols_to_remove))
+
+
+
+la_crime <- la_crime %>% rename(
+  Division_NO = 'DR_NO',
+  Date_Reported = 'Date.Rptd',
+  Date_Occurred = 'DATE.OCC',
+  Time_Occurred = 'TIME.OCC',
+  Area_Code = 'AREA',
+  Area_Name = 'AREA.NAME',
+  Crime_Code = 'Crm.Cd',
+  Crime_Description = 'Crm.Cd.Desc',
+  Weapons_Used='Weapon.Used.Cd',    
+  Weapons_Description='Weapon.Desc',
+  Victim_Age = 'Vict.Age',
+  Victim_Sex = 'Vict.Sex',
+  Victim_Descent = 'Vict.Descent',
+  Crime_Code_1 = 'Crm.Cd',
+  Location = 'LOCATION',
+  Latitude = 'LAT',
+  Longitude = 'LON'
+)
+
+la_crime <- la_crime %>%
+  filter(Victim_Sex != "H")
+
+```
+
+
+
+
+```{r}
+# Filter data for November and December
+crime_data_clean$Month <- as.numeric(format(crime_data_clean$Date_Occ, "%m"))
+crime_data_nov_dec <- crime_data_clean %>%
+  filter(Month %in% c(11, 12))
+
+cat("Number of records for November and December:", nrow(crime_data_nov_dec), "\n")
+
+# Top 5 Crimes in November and December
+crime_summary <- crime_data_nov_dec %>%
+  group_by(Crm.Cd.Desc) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 crimes in November and December:\n")
+print(head(crime_summary, 5))
+
+# Plot Top 5 Crimes
+library(ggplot2)
+top_5_crimes <- crime_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_crimes, aes(x = reorder(Crm.Cd.Desc, Count), y = Count, fill = Crm.Cd.Desc)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Crimes in November and December", x = "Crime Type", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Top 5 Areas with Most Crimes
+area_summary <- crime_data_nov_dec %>%
+  group_by(AREA.NAME) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 areas with highest crimes in November and December:\n")
+print(head(area_summary, 5))
+
+# Plot Top 5 Areas
+top_5_areas <- area_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_areas, aes(x = reorder(AREA.NAME, Count), y = Count, fill = AREA.NAME)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Areas with Highest Crimes (Nov & Dec)", x = "Area Name", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Victim Age Group Analysis
+age_group_summary <- crime_data_nov_dec %>%
+  group_by(age_group) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Victim age group distribution:\n")
+print(age_group_summary)
+
+ggplot(age_group_summary, aes(x = age_group, y = Count, fill = age_group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Victim Age Group Distribution (Nov & Dec)", x = "Age Group", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Time Period
+time_period_summary <- crime_data_nov_dec %>%
+  group_by(time_period) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by time period:\n")
+print(time_period_summary)
+
+ggplot(time_period_summary, aes(x = time_period, y = Count, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Time Period (Nov & Dec)", x = "Time Period", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Day of the Week
+day_of_week_summary <- crime_data_nov_dec %>%
+  group_by(day_of_week) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by day of the week:\n")
+print(day_of_week_summary)
+
+ggplot(day_of_week_summary, aes(x = reorder(day_of_week, -Count), y = Count, fill = day_of_week)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Day of the Week (Nov & Dec)", x = "Day of Week", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Logistic Regression Analysis
+# We'll use a binary classification approach for crime type
+
+library(caret)
+library(glmnet)
+
+# Convert some categorical variables to factors
+crime_data_clean$Vict.Sex <- as.factor(crime_data_clean$Vict.Sex)
+crime_data_clean$Vict.Descent <- as.factor(crime_data_clean$Vict.Descent)
+
+# Create a binary target variable (e.g., violent crime vs. non-violent crime)
+crime_data_clean$is_violent_crime <- ifelse(
+  grepl("ASSAULT|HOMICIDE|RAPE|ROBBERY", crime_data_clean$Crm.Cd.Desc, ignore.case = TRUE), 
+  1, 0
+)
+
+# Select features for the model
+model_features <- c(
+  "Vict.Age", 
+  "Vict.Sex", 
+  "Vict.Descent", 
+  "hour", 
+  "day_of_week", 
+  "has_weapon", 
+  "time_to_report"
+)
+
+# Prepare the dataset
+logistic_data <- crime_data_clean[, c(model_features, "is_violent_crime")]
+
+# Handle missing values
+logistic_data <- na.omit(logistic_data)
+
+# One-hot encode categorical variables
+logistic_data_encoded <- model.matrix(~ . - 1, data = logistic_data)
+
+# Split the data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(logistic_data$is_violent_crime, p = 0.7, list = FALSE)
+X_train <- logistic_data_encoded[train_index, -ncol(logistic_data_encoded)]
+y_train <- logistic_data$is_violent_crime[train_index]
+X_test <- logistic_data_encoded[-train_index, -ncol(logistic_data_encoded)]
+y_test <- logistic_data$is_violent_crime[-train_index]
+
+# Fit logistic regression with regularization (Lasso)
+cv_model <- cv.glmnet(X_train, y_train, alpha = 1, family = "binomial")
+
+# Best lambda
+best_lambda <- cv_model$lambda.min
+
+# Final model
+final_model <- glmnet(X_train, y_train, alpha = 1, lambda = best_lambda, family = "binomial")
+
+# Make predictions
+predictions <- predict(final_model, newx = X_test, type = "response")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Model Evaluation
+confusion_matrix <- table(Actual = y_test, Predicted = predicted_classes)
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate performance metrics
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+precision <- confusion_matrix[2,2] / sum(confusion_matrix[,2])
+recall <- confusion_matrix[2,2] / sum(confusion_matrix[2,])
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
+# Print performance metrics
+cat("\nModel Performance Metrics:\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("F1 Score:", round(f1_score, 4), "\n")
+```
+
+```{r}
+# Examine the most important features
+feature_importance <- coef(final_model)
+important_features <- as.matrix(feature_importance)
+colnames(important_features) <- "Coefficient"
+print("Top 10 Most Important Features:")
+print(head(sort(abs(important_features), decreasing = TRUE), 10))
+```
+```{r}
+# Extract coefficients
+coef_matrix <- coef(final_model)
+
+# Create a dataframe of feature importances
+feature_importance <- data.frame(
+  Feature = rownames(coef_matrix)[-1],  # Exclude intercept
+  Importance = abs(coef_matrix[-1, 1])  # Use absolute values
+)
+
+# Sort features by importance
+feature_importance <- feature_importance[order(-feature_importance$Importance), ]
+
+# Select top 5 features
+top_5_features <- head(feature_importance, 5)
+
+# Print top 5 features
+cat("Top 5 Most Important Features:\n")
+print(top_5_features)
+
+# Optional: Visualize feature importance
+library(ggplot2)
+ggplot(top_5_features, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 5 Most Important Features for Crime Prediction",
+    x = "Features",
+    y = "Absolute Coefficient Value"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Optional: ROC Curve
+library(pROC)
+roc_curve <- roc(y_test, as.numeric(predictions))
+plot(roc_curve, main="ROC Curve for LA Crime Prediction")
+auc_value <- auc(roc_curve)
+cat("\nArea Under the Curve (AUC):", round(auc_value, 4), "\n")
+```
+
