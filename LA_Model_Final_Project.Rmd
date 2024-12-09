@@ -261,8 +261,8 @@ top_crime_demographics
 ```{r}
 library(randomForest)
 library(caret)
-age_zero_count <- nrow(crime_data[crime_data$Vict.Age == 0, ])
-print(paste("Number of rows with Vict.Age as zero:", age_zero_count))
+crime_data <- crime_data[crime_data$Vict.Age != 0, ]
+crime_data <- crime_data %>% filter(LAT == 0 | LON == 0)
 
 crime_data_rf <- crime_data %>%
   filter(
@@ -300,4 +300,15 @@ accuracy <- sum(y_pred == y_test) / length(y_test)
 accuracy_percentage <- accuracy * 100
 
 print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
+```
+
+```{r}
+# Check rows where LAT or LON is zero
+zero_lat_lon_rows <- crime_data %>% filter(LAT == 0 | LON == 0)
+
+# Display the number of such rows
+print(paste("Number of rows where LAT or LON is zero:", nrow(zero_lat_lon_rows)))
+
+# Display the rows (optional)
+head(zero_lat_lon_rows)
 ```
