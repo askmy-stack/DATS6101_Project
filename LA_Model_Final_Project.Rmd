@@ -460,6 +460,68 @@ violent_data <- la_crime_clean %>% filter(Crime_Type == "Violent")
 ```
 
 ```{r}
+library(lubridate)
+# Create a new column for month and year
+violent_data$YearMonth <- floor_date(violent_data$Date_Occurred, "month")
+
+# Aggregate the number of violent crimes by YearMonth
+violent_monthly <- violent_data %>%
+  group_by(YearMonth) %>%
+  summarise(violent_crimes = n())
+
+# View the aggregated data
+head(violent_monthly)
+```
+```{r}
+# Convert to time series object
+violent_ts <- ts(violent_monthly$violent_crimes, start = c(year(min(violent_monthly$YearMonth)), month(min(violent_monthly$YearMonth))), frequency = 12)
+
+# Plot the time series
+plot(violent_ts, main = "Monthly Violent Crimes", ylab = "Number of Violent Crimes", xlab = "Time")
+
+```
+
+```{r}
+library(forecast)
+
+# Fit the ARIMA model
+arima_model <- auto.arima(violent_ts)
+
+# Print the summary of the model
+summary(arima_model)
+
+# Forecast the next 12 months (for example)
+forecasted_values <- forecast(arima_model, h = 24)
+
+# Plot the forecast
+plot(forecasted_values, main = "Forecast of Violent Crimes")
+
+```
+```{r}
+# You can split the time series into train and test sets if needed
+train_data <- window(violent_ts, end = c(2022, 1))  # Training data until January 2023
+test_data <- window(violent_ts, start = c(2022, 2))  # Test data from February 2023 onward
+
+# Fit ARIMA on the training data
+arima_model_train <- auto.arima(train_data)
+
+# Forecast
+forecast_train <- forecast(arima_model_train, h = length(test_data))
+
+# Plot forecast vs actual
+plot(forecast_train, main = "ARIMA Forecast vs Actual Violent Crimes")
+lines(test_data, col = 'red')
+
+# Calculate accuracy metrics
+accuracy(forecast_train, test_data)
+
+```
+1) Indications of overfitting, where the model works decently on the training set but fails to generalize well to unseen data (the test set)
+
+
+
+
+```{r}
 # Extract year, month, and day
 la_crime_data1 <- la_crime_clean %>%
   mutate(Year_Occurred = year(Date_Occurred),
@@ -467,10 +529,66 @@ la_crime_data1 <- la_crime_clean %>%
          Day_Occurred = day(Date_Occurred))
 ```
 
+```{r}
+# Apply Holt-Winters model
+hw_model <- HoltWinters(violent_ts)
 
+# Display model parameters
+summary(hw_model)
 
+```
+```{r}
+# Forecast for the next 12 months (or desired forecast horizon)
+hw_forecast <- forecast(hw_model, h = 24)
 
+# Plot the forecast
+plot(hw_forecast)
 
+# View the forecasted values
+print(hw_forecast)
+
+```
+```{r}
+# Check model accuracy
+accuracy(hw_forecast)
+
+```
+
+The Holt-Winters model has performed reasonably well, as indicated by the MASE (0.271) and ACF1 (0.0376). The model appears to perform better than a naive forecasting approach (which would predict no change from the previous time period).
+
+```{r}
+# Convert the forecast to a data frame for easy plotting
+forecast_df <- data.frame(
+  Date = time(hw_forecast$mean),
+  Forecasted = as.numeric(hw_forecast$mean)
+)
+
+actual_df <- data.frame(
+  Date = time(violent_ts),
+  Actual = as.numeric(violent_ts)
+)
+```
+
+```{r}
+
+                    
+# Merge the actual and forecasted data for plotting
+combined_df <- merge(actual_df, forecast_df, by = "Date", all = TRUE)
+
+# Plot using ggplot2
+library(ggplot2)
+
+ggplot(combined_df, aes(x = Date)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) + 
+  geom_line(aes(y = Forecasted, color = "Forecasted"), size = 1, linetype = "dashed") +
+  labs(title = "Actual vs Forecasted Violent Crimes (Holt-Winters)",
+       x = "Date",
+       y = "Number of Violent Crimes") +
+  scale_color_manual(values = c("Actual" = "blue", "Forecasted" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
 
 
