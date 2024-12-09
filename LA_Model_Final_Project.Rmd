@@ -269,7 +269,7 @@ library(caret)
 library(lubridate)
 library(dplyr)
 
-crime_data_new <- crime_data_new[crime_data$Vict.Age != 0, ]
+crime_data_new <- crime_data[crime_data$Vict.Age != 0, ]
 crime_data_new <- crime_data_new %>% filter(LAT != 0 | LON != 0)
 
 crime_data_rf <- crime_data_new %>%
