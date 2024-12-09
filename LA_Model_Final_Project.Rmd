@@ -219,8 +219,20 @@ la_crime$Date_Reported <- as.Date(la_crime$Date_Reported, format = "%m/%d/%Y")
 ```
 
 ```{r}
+la_crime[la_crime == ""] <- NA #Changing the empty strings to null values
+```
+
+```{r}
+la_crime_clean <- na.omit(la_crime) #Deleting the null values
+```
+
+
+```{r}
+head(la_crime_clean)
+```
+```{r}
 # Extract year, month, and day
-la_crime_data1 <- la_crime %>%
+la_crime_data1 <- la_crime_clean %>%
   mutate(Year_Occurred = year(Date_Occurred),
          Month_Occurred = month(Date_Occurred),
          Day_Occurred = day(Date_Occurred))
@@ -232,22 +244,6 @@ la_crime_data1 <- la_crime %>%
 head(la_crime_data1)
 
 ```
-
-
-
-
-# Part 2 - Classification
-```{r}
-la_crime[la_crime == ""] <- NA #Changing the empty strings to null values
-```
-
-```{r}
-la_crime_clean <- na.omit(la_crime) #Deleting the null values
-```
-
-
-```{r}
-head(la_crime_clean)
 ```
 
 
