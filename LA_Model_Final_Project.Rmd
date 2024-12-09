@@ -318,6 +318,7 @@ crime_counts <- table(la_crime_clean$Crime_Type)
 print(crime_counts)
 
 ```
+
 #Model Building
 ```{r}
 la_crime_clean <- la_crime_clean[, !names(la_crime_clean) %in% c("Location", "Latitude", "Longitude","Weapons_Description","Crime_Description")]
@@ -359,7 +360,7 @@ dim(test_data_reduced)
 
 ```{r}
 # Logistic Regression model
-logit_model <- glm(Crime_Type ~ Area_Name + Victim_Sex  + Crime_Code,
+logit_model <- glm(Crime_Type ~ Area_Name + Victim_Age+ Victim_Sex  +  Weapons_Used,
                    family = binomial(),
                    data = train_data_reduced)
 
@@ -370,9 +371,6 @@ logit_model <- glm(Crime_Type ~ Area_Name + Victim_Sex  + Crime_Code,
 ```{r}
 # Display the summary of the model
 summary(logit_model)
-```
-```{r}
-tf = 
 ```
 
 
@@ -419,14 +417,148 @@ cat("F1-Score:", f1_score, "\n")
 
 
 Interpretation:
-1) Precision for the Violent class is very good at 96.3%, but the recall is somewhat lower (85.1%), indicating that the model might be missing some Violent instances (false negatives).
+1) High recall (98.1%) is a positive outcome because it means the model is very good at identifying violent instances. This would be importantto minimize the risk of missing a violent case
 
-2) Specificity (78.3%) is a bit lower, which means the model might be misclassifying some Non-Violent instances as Violent (false positives).
+2) Precision(78.1%) denotes that the model is sometimes over-predicting violence—i.e., it might classify non-violent instances as violent, leading to false alarms.
+
+3) Due to the class imbalances, the accuracy is getting affected, but it is still pretty good at making the predictions.
+
+# XGB Model Q5
+```{r}
+trf <- train_data_reduced[, !names(train_data_reduced) %in% c("Division_NO", "Date_Reported","Time_Occurred","Date","Crime_Code")]
+tdf <- test_data_reduced <- test_data_reduced[, !names(test_data_reduced) %in% c("Division_NO", "Date_Reported","Time_Occurred","Crime_Code")]
+
+head(trf)
+```
+```{r}
+str(trf)
+```
+
+
+```{r}
+library(xgboost)
+# Convert factors to numeric values for xgboost
+trf$Area_Name <- as.numeric(trf$Area_Name)
+trf$Date_Occurred <- as.numeric(trf$Date_Occurred)
+trf$Victim_Sex <- as.numeric(trf$Victim_Sex)
+#trf$Crime_Code <- as.numeric(trf$Crime_Code)
+trf$Victim_Descent <- as.numeric(trf$Victim_Descent)
+trf$Weapons_Used <- as.numeric(trf$Weapons_Used)
+trf$Crime_Type <- as.numeric(trf$Crime_Type)
+
+tdf$Area_Name <- as.numeric(tdf$Area_Name)
+tdf$Date_Occurred <- as.numeric(tdf$Date_Occurred)
+tdf$Victim_Sex <- as.numeric(tdf$Victim_Sex)
+#tdf$Crime_Code <- as.numeric(tdf$Crime_Code)
+tdf$Victim_Descent <- as.numeric(tdf$Victim_Descent)
+tdf$Weapons_Used <- as.numeric(tdf$Weapons_Used)
+tdf$Crime_Type <- as.numeric(tdf$Crime_Type)
+```
+
+```{r}
+trainIndex2 <- createDataPartition(trf$Crime_Type, p = 0.7, list = FALSE)
+trainData2 <- trf[trainIndex2, ]
+testData2 <- trf[-trainIndex2, ]
+```
 
 ```{r}
 
+
+# Recode labels from 1, 2 to 0, 1
+trainData2$Crime_Type <- ifelse(trainData2$Crime_Type == 1, 0, 1)
+
+testData2$Crime_Type <- ifelse(testData2$Crime_Type == 1, 0, 1)
+
+# Check the recoded labels
+table(trainData2$Crime_Type)
+
 ```
 
+```{r}
+# Separate features (X) and labels (y)
+X_train <- as.matrix(trainData2[, -which(names(trainData2) == "Crime_Type")])  # Features
+y_train <- as.vector(trainData2$Crime_Type)  # Labels
+
+X_test <- as.matrix(testData2[, -which(names(testData2) == "Crime_Type")])  # Features
+y_test <- as.vector(testData2$Crime_Type)  # Labels
+
+# Convert data to DMatrix format for xgboost
+dtrain <- xgb.DMatrix(data = X_train, label = y_train)
+dtest <- xgb.DMatrix(data = X_test, label = y_test)
+
+```
+
+```{r}
+# Set hyperparameters for XGBoost
+params <- list(
+  objective = "binary:logistic",  # Binary classification
+  eval_metric = "logloss",        # Log-loss metric for binary classification
+  max_depth = 6,                 # Maximum depth of a tree
+  eta = 0.1,                     # Learning rate
+  subsample = 0.8,                # Fraction of samples used per tree
+  colsample_bytree = 0.8          # Fraction of features used per tree
+)
+
+# Train the model
+model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100,                  # Number of boosting rounds (trees)
+  watchlist = list(train = dtrain, test = dtest), # Watch the training process
+  early_stopping_rounds = 10       # Stop early if no improvement
+)
+
+```
+
+```{r}
+evals_result <- model$evaluation_log
+
+# Plot training and validation errors
+library(ggplot2)
+ggplot(evals_result, aes(x = iter)) +
+  geom_line(aes(y = train_logloss, color = "Train Error")) +
+  geom_line(aes(y = test_logloss, color = "Test Error")) +
+  labs(title = "Training vs Test Error", x = "Iterations", y = "Error Rate") +
+  scale_color_manual(values = c("blue", "red"))
+```
+
+```{r}
+# Make predictions on the test set
+pred_prob <- predict(model, dtest)
+
+# Convert probabilities to class labels (threshold = 0.5)
+pred_labels <- ifelse(pred_prob > 0.5, 1, 0)
+
+# Evaluate the performance using confusion matrix
+conf_matrix <- confusionMatrix(factor(pred_labels), factor(y_test))
+print(conf_matrix)
+
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']  # Precision
+recall <- conf_matrix$byClass['Recall']        # Recall
+f1_score <- conf_matrix$byClass['F1'] 
+
+# Print the metrics
+cat("Precision:", precision, "\n")
+cat("Recall:", recall, "\n")
+cat("F1-Score:", f1_score, "\n")
+```
+
+```{r}
+importance_matrix <- xgb.importance(model = model)
+
+# Print the importance matrix
+print(importance_matrix)
+
+# Plot the importance
+xgb.plot.importance(importance_matrix)
+
+```
+Interpretation:
+1) Precision (84.6%) and Recall (96.8%) are both high, which is great. The model is not only good at predicting violent instances accurately (high precision) but also doing a great job at identifying nearly all violent instances (high recall).
+2) F1-Score of 90.3% shows that the model is effectively balancing precision and recall. This is very impressive because both metrics are high, indicating the model is performing well overall.
 
 
 #Forecasting
