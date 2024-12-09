@@ -236,24 +236,6 @@ value_counts <- table(la_crime_clean$Crime_Description)
 print(value_counts)
 ```
 
-
-
-```{r}
-# Extract year, month, and day
-la_crime_data1 <- la_crime_clean %>%
-  mutate(Year_Occurred = year(Date_Occurred),
-         Month_Occurred = month(Date_Occurred),
-         Day_Occurred = day(Date_Occurred))
-```
-
-
-```{r}
-# View structure
-head(la_crime_data1)
-
-```
-
-
 ```{r}
 # Define a list of violent and non-violent crimes
 violent_crimes <- c("ASSAULT WITH DEADLY WEAPON ON POLICE OFFICER", 
@@ -349,7 +331,141 @@ print("List of 'Other' Crimes:")
 print(other_crimes)
 
 ```
+#Model Building
+```{r}
+la_crime_clean <- la_crime_clean[, !names(la_crime_clean) %in% c("Location", "Latitude", "Longitude","Weapons_Description","Crime_Description")]
 
+```
+
+```{r}
+la_crime_clean$Crime_Type <- as.factor(la_crime_clean$Crime_Type)  # Ensure Crime_Type is a factor (Violent/Non-Violent)
+la_crime_clean$Victim_Sex <- as.factor(la_crime_clean$Victim_Sex)
+la_crime_clean$Victim_Descent <- as.factor(la_crime_clean$Victim_Descent)
+```
+
+
+```{r}
+library(caret)
+trainIndex <- createDataPartition(la_crime_clean$Crime_Type, p = 0.7, list = FALSE)
+train_data <- la_crime_clean[trainIndex, ]
+test_data <- la_crime_clean[-trainIndex, ]
+
+```
+
+```{r}
+# Reduce the training set size to, say, 20% of the original data
+trainIndex_reduced <- sample(1:nrow(train_data), size = 0.05 * nrow(train_data))
+
+# Reduce the test set size to, say, 20% of the original data
+testIndex_reduced <- sample(1:nrow(test_data), size = 0.05 * nrow(test_data))
+
+# Create smaller training and test datasets
+train_data_reduced <- train_data[trainIndex_reduced, ]
+test_data_reduced <- test_data[testIndex_reduced, ]
+
+# Check the sizes of the reduced datasets
+dim(train_data_reduced)
+dim(test_data_reduced)
+```
+
+```{r}
+# Create a stratified sample from the training data (keeping class balance)
+train_data_reduced1 <- createDataPartition(train_data_reduced$Crime_Type, p = 0.2, list = FALSE)
+train_data_reduced1 <- train_data[train_data_reduced, ]
+
+# Create a stratified sample from the test data
+test_data_reduced1 <- createDataPartition(test_data_reduced$Crime_Type, p = 0.2, list = FALSE)
+test_data_reduced1 <- test_data[test_data_reduced, ]
+
+# Check class distribution
+table(train_data_reduced1$Crime_Type)
+table(test_data_reduced1$Crime_Type)
+```
+
+
+
+```{r}
+# Logistic Regression model
+logit_model <- glm(Crime_Type ~ Area_Name + Victim_Sex  + Crime_Code,
+                   family = binomial(),
+                   data = train_data_reduced)
+
+
+```
+
+
+```{r}
+# Display the summary of the model
+summary(logit_model)
+```
+
+```{r}
+predictions <- predict(logit_model, newdata = test_data, type = "response")
+
+# Convert probabilities to binary class predictions (if needed)
+predicted_class <- ifelse(predictions > 0.5, "Violent", "Non-Violent")
+```
+
+```{r}
+# Actual labels from the test set
+actual_class <- test_data$Crime_Type
+
+# Create confusion matrix
+confusion_matrix <- table(Predicted = predicted_class, Actual = actual_class)
+
+# Print confusion matrix
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+cat("Accuracy: ", accuracy, "\n")
+
+```
+```{r}
+lift_curve <- lift(actual_class ~ probabilities, data = train_data_reduced)
+plot(lift_curve, main="Lift Chart")
+```
+
+
+```{r}
+TN <- confusion_matrix["Non-Violent", "Non-Violent"]  # True Negative
+FP <- confusion_matrix["Violent", "Non-Violent"]      # False Positive
+FN <- confusion_matrix["Non-Violent", "Violent"]      # False Negative
+TP <- confusion_matrix["Violent", "Violent"]
+
+precision <- TP / (TP + FP)
+cat("Precision:", precision, "\n")
+
+recall <- TP / (TP + FN)
+cat("Recall:", recall, "\n")
+
+f1_score <- 2 * (precision * recall) / (precision + recall)
+cat("F1-Score:", f1_score, "\n")
+
+
+```
+
+
+Interpretation:
+1) Precision for the Violent class is very good at 96.3%, but the recall is somewhat lower (85.1%), indicating that the model might be missing some Violent instances (false negatives).
+
+2) Specificity (78.3%) is a bit lower, which means the model might be misclassifying some Non-Violent instances as Violent (false positives).
+
+
+
+#Forecasting
+
+```{r}
+violent_data <- la_crime_clean %>% filter(Crime_Type == "Violent")
+```
+
+```{r}
+# Extract year, month, and day
+la_crime_data1 <- la_crime_clean %>%
+  mutate(Year_Occurred = year(Date_Occurred),
+         Month_Occurred = month(Date_Occurred),
+         Day_Occurred = day(Date_Occurred))
+```
 
 
 
