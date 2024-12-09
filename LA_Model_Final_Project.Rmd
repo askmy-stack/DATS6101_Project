@@ -496,15 +496,6 @@ accuracy(forecast_train, test_data)
 
 
 
-
-```{r}
-# Extract year, month, and day
-la_crime_data1 <- la_crime_clean %>%
-  mutate(Year_Occurred = year(Date_Occurred),
-         Month_Occurred = month(Date_Occurred),
-         Day_Occurred = day(Date_Occurred))
-```
-
 ```{r}
 # Apply Holt-Winters model
 hw_model <- HoltWinters(violent_ts)
@@ -524,6 +515,7 @@ plot(hw_forecast)
 print(hw_forecast)
 
 ```
+
 ```{r}
 # Check model accuracy
 accuracy(hw_forecast)
@@ -565,34 +557,6 @@ ggplot(combined_df, aes(x = Date)) +
   theme(legend.title = element_blank()) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
