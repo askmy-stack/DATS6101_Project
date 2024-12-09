@@ -56,7 +56,7 @@ Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset cont
 
 
 ```{r 1, echo=T, results='markup'}
-crime = read.csv("Crime_Data.csv")
+crime = read.csv("Crime_Data_from_2020_to_Present.csv")
 head(crime)
 ```
 ## Date Analysis and Cleaning 0.1
@@ -82,7 +82,6 @@ The dataset contains 28 columns and 986500 rows.
 13) Location - Street address of crime incident rounded to the nearest hundred block to maintain anonymity.
 14) LAT - Latitude
 15) LON - Longtitude
-
 
 ```{r 3, echo=T, results='markup'}
 na_count <- colSums(is.na(crime))
@@ -169,17 +168,18 @@ crime_data_clean <- crime_data[!crime_data$age_outlier &
 ```{r 10, echo=T, results='markup'}
 library(dplyr)
 la_crime <- crime %>%
-  filter(!is.na('Weapon.Used.Cd'))
+  filter(!is.na(Weapon.Used.Cd))
 
-cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2", 
+cols_to_remove <- c("Mocodes", "Rpt.Dist.No", "Part.1.2","Crm.Cd.1", 
                     "Crm.Cd.2", "Crm.Cd.3", "Crm.Cd.4",
                     "Premis.Cd", "Premis.Desc", "Status",
                     "Status.Desc", "Cross.Street")
 
 la_crime <- la_crime %>% select(-all_of(cols_to_remove))
+```
 
 
-
+```{r 11, echo=T, results='markup'}
 la_crime <- la_crime %>% rename(
   Division_NO = 'DR_NO',
   Date_Reported = 'Date.Rptd',
@@ -194,7 +194,7 @@ la_crime <- la_crime %>% rename(
   Victim_Age = 'Vict.Age',
   Victim_Sex = 'Vict.Sex',
   Victim_Descent = 'Vict.Descent',
-  Crime_Code_1 = 'Crm.Cd',
+  #Crime_Code_1 = 'Crm.Cd',
   Location = 'LOCATION',
   Latitude = 'LAT',
   Longitude = 'LON'
@@ -204,6 +204,360 @@ la_crime <- la_crime %>%
   filter(Victim_Sex != "H")
 
 ```
+
+```{r}
+head(la_crime)
+```
+
+```{r}
+la_crime$Date_Occurred <- sub(" .*", "", la_crime$Date_Occurred)
+la_crime$Date_Occurred <- as.Date(la_crime$Date_Occurred, format = "%m/%d/%Y")
+
+la_crime$Date_Reported <- sub(" .*", "", la_crime$Date_Reported)
+la_crime$Date_Reported <- as.Date(la_crime$Date_Reported, format = "%m/%d/%Y")
+```
+
+```{r}
+la_crime[la_crime == ""] <- NA #Changing the empty strings to null values
+```
+
+```{r}
+la_crime_clean <- na.omit(la_crime) #Deleting the null values
+```
+
+
+```{r}
+tail(la_crime_clean)
+```
+
+
+```{r}
+# Define a list of violent and non-violent crimes
+violent_crimes <- c("ASSAULT WITH DEADLY WEAPON ON POLICE OFFICER", 
+                    "ASSAULT WITH DEADLY WEAPON, AGGRAVATED ASSAULT","ATTEMPTED ROBBERY", 
+                    "BATTERY - SIMPLE ASSAULT", 
+                    "BATTERY ON A FIREFIGHTER",
+                    "BATTERY POLICE (SIMPLE)", 
+                    "BATTERY WITH SEXUAL CONTACT",
+                    "BEASTIALITY, CRIME AGAINST NATURE SEXUAL ASSLT WITH ANIM",
+                    "CRIMINAL HOMICIDE", 
+                    "RAPE, FORCIBLE", 
+                    "ROBBERY","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                    "KIDNAPPING", 
+                    "SEXUAL PENETRATION W/FOREIGN OBJECT", 
+                    "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ",
+                    "INTIMATE PARTNER - AGGRAVATED ASSAULT",
+                    "INTIMATE PARTNER - SIMPLE ASSAULT", "DRUNK ROLL",
+                    "CHILD ABUSE (PHYSICAL) - AGGRAVATED ASSAULT",
+                    "STRONG-ARM (HANDS,FIST,FEET OR BODILY FORCE)","HUMAN TRAFFICKING - COMMERCIAL SEX ACTS", 
+                    "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE", "INCEST (SEXUAL ACTS BETWEEN BLOOD RELATIVES)", 
+                    "INCITING A RIOT","SHOTS FIRED AT INHABITED DWELLING", 
+                        "SHOTS FIRED AT MOVING VEHICLE, TRAIN OR AIRCRAFT",
+                    "ORAL COPULATION","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT","REPLICA FIREARMS(SALE,DISPLAY,MANUFACTURE OR DISTRIBUTE)","SEX OFFENDER REGISTRANT OUT OF COMPLIANCE", 
+                        "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ)","CRM AGNST CHLD (13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)","BOMB SCARE","EXTORTION","PANDERING",
+                    "CRM AGNST CHLD(13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)", "RAPE, ATTEMPTED",
+                    "MANSLAUGHTER, NEGLIGENT", "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE",
+                    "SODOMY/SEXUAL CONTACT B/W PENIS OF ONE PERS TO ANUS OTH",
+                    "LEWD/LASCIVIOUS ACTS WITH CHILD","RAPE, ATTEMPTED","PIMPING","PROWLER",
+                    "WEAPONS POSSESSION/BOMBING","LYNCHING", "LYNCHING - ATTEMPTED",
+                    "HUMAN TRAFFICKING - COMMERCIAL SEX ACTS")
+
+non_violent_crimes <- c("ARSON", "BIKE - STOLEN", "BURGLARY", 
+                        "BURGLARY FROM VEHICLE", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", 
+                        "VANDALISM - FELONY", "VANDALISM - MISDEAMEANOR", "PICKPOCKET","TELEPHONE PROPERTY - DAMAGE", "THEFT FROM MOTOR VEHICLE - ATTEMPT",
+                        "THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)","BURGLARY, ATTEMPTED", 
+                        "CHILD ABANDONMENT", "CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                        "CHILD ANNOYING (17YRS & UNDER)", "CHILD NEGLECT (SEE 300 W.I.C.)","RECKLESS DRIVING", 
+                        "CHILD PORNOGRAPHY", "CHILD STEALING", "CONSPIRACY", "CONTEMPT OF COURT", 
+                        "CONTRIBUTING", "COUNTERFEIT", "CREDIT CARDS, FRAUD USE ($950 & UNDER)", 
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED", "CRM AGNST CHLD (13 OR UNDER)",  
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)","CRUELTY TO ANIMALS","LETTERS, LEWD  -  TELEPHONE CALLS, LEWD", "RESISTING ARREST", "ROBBERY","SHOPLIFTING - ATTEMPT", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", "SHOPLIFTING-GRAND THEFT ($950.01 & OVER)",
+                        "LEWD CONDUCT", "LEWD/LASCIVIOUS ACTS WITH CHILD", "PEEPING TOM", "PICKPOCKET", 
+                        "PICKPOCKET, ATTEMPT", "PURSE SNATCHING",  "PURSE SNATCHING - ATTEMPT",
+                        "THEFT PLAIN - PETTY ($950 & UNDER)", "DEFRAUDING INNKEEPER/THEFT OF SERVICES, $950 & UNDER", 
+                        "DEFRAUDING INNKEEPER/THEFT OF SERVICES, OVER $950.01", "DISHONEST EMPLOYEE - PETTY THEFT", 
+                        "DISRUPT SCHOOL", "DISTURBING THE PEACE", "DOCUMENT FORGERY / STOLEN FELONY", 
+                        "DRIVING WITHOUT OWNER CONSENT (DWOC)","EMBEZZLEMENT, GRAND THEFT ($950.01 & OVER)", 
+                        "EMBEZZLEMENT, PETTY THEFT ($950 & UNDER)", "FAILURE TO YIELD", 
+                        "FALSE IMPRISONMENT", "FALSE POLICE REPORT", "FIREARMS EMERGENCY PROTECTIVE ORDER (FIREARMS EPO)", "GRAND THEFT / INSURANCE FRAUD","THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)", 
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)", "THEFT FROM PERSON - ATTEMPT", 
+                        "THEFT OF IDENTITY", "THEFT PLAIN - ATTEMPT", 
+                        "THEFT-GRAND ($950.01 & OVER)EXCPT,GUNS,FOWL,LIVESTK,PROD",
+                        "THEFT FROM PERSON - ATTEMPT", "PICKPOCKET","THEFT, COIN MACHINE - ATTEMPT", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)", 
+                        "THEFT, COIN MACHINE - PETTY ($950 & UNDER)", "THEFT, PERSON", 
+                        "THREATENING PHONE CALLS/LETTERS", "THROWING OBJECT AT MOVING VEHICLE", 
+                        "TILL TAP - PETTY ($950 & UNDER)", "TRAIN WRECKING", "TRESPASSING", 
+                        "UNAUTHORIZED COMPUTER ACCESS", "VANDALISM - FELONY ($400 & OVER, ALL CHURCH VANDALISMS)", 
+                        "VANDALISM - MISDEAMEANOR ($399 OR UNDER)", "VEHICLE - ATTEMPT STOLEN", 
+                        "VEHICLE - STOLEN", "VEHICLE, STOLEN - OTHER (MOTORIZED SCOOTERS, BIKES, ETC)", 
+                        "VIOLATION OF COURT ORDER", "VIOLATION OF RESTRAINING ORDER", 
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","BURGLARY FROM VEHICLE, ATTEMPTED",
+                        "OTHER MISCELLANEOUS CRIME","CONTEMPT OF COURT","BUNCO, PETTY THEFT",
+                        "DISCHARGE FIREARMS/SHOTS FIRED", "STALKING","VANDALISM - MISDEAMEANOR ($399 OR UNDER)","OTHER ASSAULT","BUNCO, GRAND THEFT","INDECENT EXPOSURE","KIDNAPPING - GRAND ATTEMPT","BUNCO, ATTEMPT","CREDIT CARDS, FRAUD USE ($950 & UNDER",
+                        "TILL TAP - PETTY ($950 & UNDER)","VIOLATION OF COURT ORDER",
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","VIOLATION OF RESTRAINING ORDER",
+                        "BRANDISH WEAPON","THREATENING PHONE CALLS/LETTERS",
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED","CHILD ANNOYING (17YRS & UNDER)",
+                        "TRESPASSING", "FRAUD USE ($950 & UNDER)","	LETTERS, LEWD - TELEPHONE CALLS, LEWD", 
+                        "THEFT OF IDENTITY", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)")
+```
+
+```{r}
+la_crime_clean$Crime_Type <- ifelse(la_crime_clean$Crime_Description %in% violent_crimes, "Violent", 
+                                           ifelse(la_crime_clean$Crime_Description %in% non_violent_crimes, "Non-Violent", "Other"))
+```
+
+```{r}
+la_crime_clean
+```
+
+```{r}
+crime_counts <- table(la_crime_clean$Crime_Type)
+
+# View the total counts
+print(crime_counts)
+
+```
+#Model Building
+```{r}
+la_crime_clean <- la_crime_clean[, !names(la_crime_clean) %in% c("Location", "Latitude", "Longitude","Weapons_Description","Crime_Description")]
+
+```
+
+```{r}
+la_crime_clean$Crime_Type <- as.factor(la_crime_clean$Crime_Type)  # Ensuring Crime_Type is a factor (Violent/Non-Violent)
+la_crime_clean$Victim_Sex <- as.factor(la_crime_clean$Victim_Sex)
+la_crime_clean$Victim_Descent <- as.factor(la_crime_clean$Victim_Descent)
+```
+
+
+```{r}
+library(caret)
+trainIndex <- createDataPartition(la_crime_clean$Crime_Type, p = 0.7, list = FALSE)
+train_data <- la_crime_clean[trainIndex, ]
+test_data <- la_crime_clean[-trainIndex, ]
+
+```
+
+```{r}
+# Reduce the training set size to,5% of the original data
+trainIndex_reduced <- sample(1:nrow(train_data), size = 0.05 * nrow(train_data))
+
+# Reduce the test set size to,5% of the original data
+testIndex_reduced <- sample(1:nrow(test_data), size = 0.05 * nrow(test_data))
+
+# Create smaller training and test datasets
+train_data_reduced <- train_data[trainIndex_reduced, ]
+test_data_reduced <- test_data[testIndex_reduced, ]
+
+# sizes of the reduced datasets
+dim(train_data_reduced)
+dim(test_data_reduced)
+```
+
+
+
+```{r}
+# Logistic Regression model
+logit_model <- glm(Crime_Type ~ Area_Name + Victim_Sex  + Crime_Code,
+                   family = binomial(),
+                   data = train_data_reduced)
+
+
+```
+
+
+```{r}
+# Display the summary of the model
+summary(logit_model)
+```
+```{r}
+tf = 
+```
+
+
+```{r}
+predictions <- predict(logit_model, newdata = test_data, type = "response")
+
+# Convert probabilities to binary class predictions (if needed)
+predicted_class <- ifelse(predictions > 0.5, "Violent", "Non-Violent")
+```
+
+```{r}
+# Actual labels from the test set
+actual_class <- test_data$Crime_Type
+
+# Create confusion matrix
+confusion_matrix <- table(Predicted = predicted_class, Actual = actual_class)
+
+# Print confusion matrix
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+cat("Accuracy: ", accuracy, "\n")
+
+```
+
+```{r}
+TN <- confusion_matrix["Non-Violent", "Non-Violent"]  # True Negative
+FP <- confusion_matrix["Violent", "Non-Violent"]      # False Positive
+FN <- confusion_matrix["Non-Violent", "Violent"]      # False Negative
+TP <- confusion_matrix["Violent", "Violent"]
+
+precision <- TP / (TP + FP)
+cat("Precision:", precision, "\n")
+
+recall <- TP / (TP + FN)
+cat("Recall:", recall, "\n")
+
+f1_score <- 2 * (precision * recall) / (precision + recall)
+cat("F1-Score:", f1_score, "\n")
+
+
+```
+
+
+Interpretation:
+1) Precision for the Violent class is very good at 96.3%, but the recall is somewhat lower (85.1%), indicating that the model might be missing some Violent instances (false negatives).
+
+2) Specificity (78.3%) is a bit lower, which means the model might be misclassifying some Non-Violent instances as Violent (false positives).
+
+```{r}
+
+```
+
+
+
+#Forecasting
+
+```{r}
+violent_data <- la_crime_clean %>% filter(Crime_Type == "Violent")
+```
+
+```{r}
+library(lubridate)
+# Create a new column for month and year
+violent_data$YearMonth <- floor_date(violent_data$Date_Occurred, "month")
+
+# Aggregate the number of violent crimes by YearMonth
+violent_monthly <- violent_data %>%
+  group_by(YearMonth) %>%
+  summarise(violent_crimes = n())
+
+# View the aggregated data
+head(violent_monthly)
+```
+```{r}
+# Convert to time series object
+violent_ts <- ts(violent_monthly$violent_crimes, start = c(year(min(violent_monthly$YearMonth)), month(min(violent_monthly$YearMonth))), frequency = 12)
+
+# Plot the time series
+plot(violent_ts, main = "Monthly Violent Crimes", ylab = "Number of Violent Crimes", xlab = "Time")
+
+```
+
+```{r}
+library(forecast)
+
+# Fit the ARIMA model
+arima_model <- auto.arima(violent_ts)
+
+# Print the summary of the model
+summary(arima_model)
+
+# Forecast the next 12 months (for example)
+forecasted_values <- forecast(arima_model, h = 24)
+
+# Plot the forecast
+plot(forecasted_values, main = "Forecast of Violent Crimes")
+
+```
+```{r}
+# You can split the time series into train and test sets if needed
+train_data <- window(violent_ts, end = c(2022, 1))  # Training data until January 2023
+test_data <- window(violent_ts, start = c(2022, 2))  # Test data from February 2023 onward
+
+# Fit ARIMA on the training data
+arima_model_train <- auto.arima(train_data)
+
+# Forecast
+forecast_train <- forecast(arima_model_train, h = length(test_data))
+
+# Plot forecast vs actual
+plot(forecast_train, main = "ARIMA Forecast vs Actual Violent Crimes")
+lines(test_data, col = 'red')
+
+# Calculate accuracy metrics
+accuracy(forecast_train, test_data)
+
+```
+1) Indications of overfitting, where the model works decently on the training set but fails to generalize well to unseen data (the test set)
+
+
+
+```{r}
+# Apply Holt-Winters model
+hw_model <- HoltWinters(violent_ts)
+
+# Display model parameters
+summary(hw_model)
+
+```
+```{r}
+# Forecast for the next 12 months (or desired forecast horizon)
+hw_forecast <- forecast(hw_model, h = 24)
+
+# Plot the forecast
+plot(hw_forecast)
+
+# View the forecasted values
+print(hw_forecast)
+
+```
+
+```{r}
+# Check model accuracy
+accuracy(hw_forecast)
+
+```
+
+The Holt-Winters model has performed reasonably well, as indicated by the MASE (0.271) and ACF1 (0.0376). The model appears to perform better than a naive forecasting approach (which would predict no change from the previous time period).
+
+```{r}
+# Convert the forecast to a data frame for easy plotting
+forecast_df <- data.frame(
+  Date = time(hw_forecast$mean),
+  Forecasted = as.numeric(hw_forecast$mean)
+)
+
+actual_df <- data.frame(
+  Date = time(violent_ts),
+  Actual = as.numeric(violent_ts)
+)
+```
+
+```{r}
+
+                    
+# Merge the actual and forecasted data for plotting
+combined_df <- merge(actual_df, forecast_df, by = "Date", all = TRUE)
+
+# Plot using ggplot2
+library(ggplot2)
+
+ggplot(combined_df, aes(x = Date)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) + 
+  geom_line(aes(y = Forecasted, color = "Forecasted"), size = 1, linetype = "dashed") +
+  labs(title = "Actual vs Forecasted Violent Crimes (Holt-Winters)",
+       x = "Date",
+       y = "Number of Violent Crimes") +
+  scale_color_manual(values = c("Actual" = "blue", "Forecasted" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 
 
 SMART Question
