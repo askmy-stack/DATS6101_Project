@@ -227,14 +227,9 @@ la_crime_clean <- na.omit(la_crime) #Deleting the null values
 
 
 ```{r}
-la_crime_clean
+tail(la_crime_clean)
 ```
 
-```{r}
-value_counts <- table(la_crime_clean$Crime_Description)
-#unique_count <- length(unique(la_crime_clean$Victim_Age))
-print(value_counts)
-```
 
 ```{r}
 # Define a list of violent and non-violent crimes
@@ -322,14 +317,6 @@ crime_counts <- table(la_crime_clean$Crime_Type)
 # View the total counts
 print(crime_counts)
 
-other_crimes <- la_crime_clean[la_crime_clean$Crime_Type == "Other", ]
-
-
-
-# View the list of crimes classified as "Other"
-print("List of 'Other' Crimes:")
-print(other_crimes)
-
 ```
 #Model Building
 ```{r}
@@ -338,7 +325,7 @@ la_crime_clean <- la_crime_clean[, !names(la_crime_clean) %in% c("Location", "La
 ```
 
 ```{r}
-la_crime_clean$Crime_Type <- as.factor(la_crime_clean$Crime_Type)  # Ensure Crime_Type is a factor (Violent/Non-Violent)
+la_crime_clean$Crime_Type <- as.factor(la_crime_clean$Crime_Type)  # Ensuring Crime_Type is a factor (Violent/Non-Violent)
 la_crime_clean$Victim_Sex <- as.factor(la_crime_clean$Victim_Sex)
 la_crime_clean$Victim_Descent <- as.factor(la_crime_clean$Victim_Descent)
 ```
@@ -353,33 +340,19 @@ test_data <- la_crime_clean[-trainIndex, ]
 ```
 
 ```{r}
-# Reduce the training set size to, say, 20% of the original data
+# Reduce the training set size to,5% of the original data
 trainIndex_reduced <- sample(1:nrow(train_data), size = 0.05 * nrow(train_data))
 
-# Reduce the test set size to, say, 20% of the original data
+# Reduce the test set size to,5% of the original data
 testIndex_reduced <- sample(1:nrow(test_data), size = 0.05 * nrow(test_data))
 
 # Create smaller training and test datasets
 train_data_reduced <- train_data[trainIndex_reduced, ]
 test_data_reduced <- test_data[testIndex_reduced, ]
 
-# Check the sizes of the reduced datasets
+# sizes of the reduced datasets
 dim(train_data_reduced)
 dim(test_data_reduced)
-```
-
-```{r}
-# Create a stratified sample from the training data (keeping class balance)
-train_data_reduced1 <- createDataPartition(train_data_reduced$Crime_Type, p = 0.2, list = FALSE)
-train_data_reduced1 <- train_data[train_data_reduced, ]
-
-# Create a stratified sample from the test data
-test_data_reduced1 <- createDataPartition(test_data_reduced$Crime_Type, p = 0.2, list = FALSE)
-test_data_reduced1 <- test_data[test_data_reduced, ]
-
-# Check class distribution
-table(train_data_reduced1$Crime_Type)
-table(test_data_reduced1$Crime_Type)
 ```
 
 
@@ -398,6 +371,10 @@ logit_model <- glm(Crime_Type ~ Area_Name + Victim_Sex  + Crime_Code,
 # Display the summary of the model
 summary(logit_model)
 ```
+```{r}
+tf = 
+```
+
 
 ```{r}
 predictions <- predict(logit_model, newdata = test_data, type = "response")
@@ -421,11 +398,6 @@ accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
 cat("Accuracy: ", accuracy, "\n")
 
 ```
-```{r}
-lift_curve <- lift(actual_class ~ probabilities, data = train_data_reduced)
-plot(lift_curve, main="Lift Chart")
-```
-
 
 ```{r}
 TN <- confusion_matrix["Non-Violent", "Non-Violent"]  # True Negative
@@ -450,6 +422,10 @@ Interpretation:
 1) Precision for the Violent class is very good at 96.3%, but the recall is somewhat lower (85.1%), indicating that the model might be missing some Violent instances (false negatives).
 
 2) Specificity (78.3%) is a bit lower, which means the model might be misclassifying some Non-Violent instances as Violent (false positives).
+
+```{r}
+
+```
 
 
 
