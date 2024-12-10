@@ -56,7 +56,13 @@ Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset cont
 
 
 ```{r 1, echo=T, results='markup'}
+<<<<<<< HEAD
 crime = read.csv("Crime_Data_from_2020_to_Present.csv")
+=======
+
+crime = read.csv("/Users/amoghramagiri/Documents/mid_term_project/DATS6101_Project/Crime_Data.csv")
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
 head(crime)
 ```
 ## Date Analysis and Cleaning 0.1
@@ -693,6 +699,7 @@ ggplot(combined_df, aes(x = Date)) +
 
 
 
+<<<<<<< HEAD
 SMART Question
 
 How accurately can we predict the time taken to report different types of crimes in Los Angeles, considering factors such as crime type, location, and victim demographics, to identify potential reporting delays that might affect crime investigation efficiency ?
@@ -1403,5 +1410,344 @@ comparison <- data.frame(
   Mean_F2 = c(rf_results$mean_f2, xgb_results$mean_f2)
 )
 print(comparison)
+```
+
+
+=======
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
+
+
+```{r}
+# Filter data for November and December
+crime_data_clean$Month <- as.numeric(format(crime_data_clean$Date_Occ, "%m"))
+crime_data_nov_dec <- crime_data_clean %>%
+  filter(Month %in% c(11, 12))
+
+cat("Number of records for November and December:", nrow(crime_data_nov_dec), "\n")
+
+# Top 5 Crimes in November and December
+crime_summary <- crime_data_nov_dec %>%
+  group_by(Crm.Cd.Desc) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 crimes in November and December:\n")
+print(head(crime_summary, 5))
+
+# Plot Top 5 Crimes
+library(ggplot2)
+top_5_crimes <- crime_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_crimes, aes(x = reorder(Crm.Cd.Desc, Count), y = Count, fill = Crm.Cd.Desc)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Crimes in November and December", x = "Crime Type", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Top 5 Areas with Most Crimes
+area_summary <- crime_data_nov_dec %>%
+  group_by(AREA.NAME) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 areas with highest crimes in November and December:\n")
+print(head(area_summary, 5))
+
+# Plot Top 5 Areas
+top_5_areas <- area_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_areas, aes(x = reorder(AREA.NAME, Count), y = Count, fill = AREA.NAME)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Areas with Highest Crimes (Nov & Dec)", x = "Area Name", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Victim Age Group Analysis
+age_group_summary <- crime_data_nov_dec %>%
+  group_by(age_group) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Victim age group distribution:\n")
+print(age_group_summary)
+
+ggplot(age_group_summary, aes(x = age_group, y = Count, fill = age_group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Victim Age Group Distribution (Nov & Dec)", x = "Age Group", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Time Period
+time_period_summary <- crime_data_nov_dec %>%
+  group_by(time_period) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by time period:\n")
+print(time_period_summary)
+
+ggplot(time_period_summary, aes(x = time_period, y = Count, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Time Period (Nov & Dec)", x = "Time Period", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Day of the Week
+day_of_week_summary <- crime_data_nov_dec %>%
+  group_by(day_of_week) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by day of the week:\n")
+print(day_of_week_summary)
+
+ggplot(day_of_week_summary, aes(x = reorder(day_of_week, -Count), y = Count, fill = day_of_week)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Day of the Week (Nov & Dec)", x = "Day of Week", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Logistic Regression Analysis
+# We'll use a binary classification approach for crime type
+
+library(caret)
+library(glmnet)
+
+# Convert some categorical variables to factors
+crime_data_clean$Vict.Sex <- as.factor(crime_data_clean$Vict.Sex)
+crime_data_clean$Vict.Descent <- as.factor(crime_data_clean$Vict.Descent)
+
+# Create a binary target variable (e.g., violent crime vs. non-violent crime)
+crime_data_clean$is_violent_crime <- ifelse(
+  grepl("ASSAULT|HOMICIDE|RAPE|ROBBERY", crime_data_clean$Crm.Cd.Desc, ignore.case = TRUE), 
+  1, 0
+)
+
+# Select features for the model
+model_features <- c(
+  "Vict.Age", 
+  "Vict.Sex", 
+  "Vict.Descent", 
+  "hour", 
+  "day_of_week", 
+  "has_weapon", 
+  "time_to_report"
+)
+
+# Prepare the dataset
+logistic_data <- crime_data_clean[, c(model_features, "is_violent_crime")]
+
+# Handle missing values
+logistic_data <- na.omit(logistic_data)
+
+# One-hot encode categorical variables
+logistic_data_encoded <- model.matrix(~ . - 1, data = logistic_data)
+
+# Split the data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(logistic_data$is_violent_crime, p = 0.7, list = FALSE)
+X_train <- logistic_data_encoded[train_index, -ncol(logistic_data_encoded)]
+y_train <- logistic_data$is_violent_crime[train_index]
+X_test <- logistic_data_encoded[-train_index, -ncol(logistic_data_encoded)]
+y_test <- logistic_data$is_violent_crime[-train_index]
+
+# Fit logistic regression with regularization (Lasso)
+cv_model <- cv.glmnet(X_train, y_train, alpha = 1, family = "binomial")
+
+# Best lambda
+best_lambda <- cv_model$lambda.min
+
+# Final model
+final_model <- glmnet(X_train, y_train, alpha = 1, lambda = best_lambda, family = "binomial")
+
+# Make predictions
+predictions <- predict(final_model, newx = X_test, type = "response")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Model Evaluation
+confusion_matrix <- table(Actual = y_test, Predicted = predicted_classes)
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate performance metrics
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+precision <- confusion_matrix[2,2] / sum(confusion_matrix[,2])
+recall <- confusion_matrix[2,2] / sum(confusion_matrix[2,])
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
+# Print performance metrics
+cat("\nModel Performance Metrics:\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("F1 Score:", round(f1_score, 4), "\n")
+```
+
+```{r}
+# Examine the most important features
+feature_importance <- coef(final_model)
+important_features <- as.matrix(feature_importance)
+colnames(important_features) <- "Coefficient"
+print("Top 10 Most Important Features:")
+
+print(head(sort(abs(important_features), decreasing = TRUE), 10))
+```
+```{r}
+# Extract coefficients
+coef_matrix <- coef(final_model)
+
+# Create a dataframe of feature importances
+feature_importance <- data.frame(
+  Feature = rownames(coef_matrix)[-1],  # Exclude intercept
+  Importance = abs(coef_matrix[-1, 1])  # Use absolute values
+)
+
+# Sort features by importance
+feature_importance <- feature_importance[order(-feature_importance$Importance), ]
+
+# Select top 5 features
+top_5_features <- head(feature_importance, 5)
+
+# Print top 5 features
+cat("Top 5 Most Important Features:\n")
+print(top_5_features)
+
+# Optional: Visualize feature importance
+library(ggplot2)
+ggplot(top_5_features, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 5 Most Important Features for Crime Prediction",
+    x = "Features",
+    y = "Absolute Coefficient Value"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Optional: ROC Curve
+library(pROC)
+roc_curve <- roc(y_test, as.numeric(predictions))
+plot(roc_curve, main="ROC Curve for LA Crime Prediction")
+auc_value <- auc(roc_curve)
+cat("\nArea Under the Curve (AUC):", round(auc_value, 4), "\n")
+<<<<<<< HEAD
+=======
+=======
+SMART Question
+
+1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
+
+```{r}
+library(dplyr)
+library(lubridate)
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+# Identify top 3 crimes overall from 2020 to present
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023 ) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+top_crime_locations <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, AREA.NAME) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+
+
+# Analyze temporal patterns
+top_crime_temporal <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  mutate(month = month(Date_Occ),
+         day_of_week = wday(Date_Occ, label = TRUE)) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, month, day_of_week) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+# Analyze demographic factors
+top_crime_demographics <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, Vict.Sex, Vict.Descent) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+```
+
+```{r}
+top_crimes
+top_crime_locations
+
+top_crime_temporal
+top_crime_demographics
+```
+
+
+
+```{r}
+library(randomForest)
+library(caret)
+library(lubridate)
+library(dplyr)
+
+crime_data_new <- crime_data[crime_data$Vict.Age != 0, ]
+crime_data_new <- crime_data_new %>% filter(LAT != 0 | LON != 0)
+
+crime_data_rf <- crime_data_new %>%
+  filter(
+    Crm.Cd %in% c(510, 624, 354),
+    year(Date_Occ) >= 2020 & year(Date_Occ) <=2023) %>%
+  mutate(
+    month = month(Date_Occ),
+    day_of_week = as.factor(wday(Date_Occ)),
+    AREA.NAME = as.factor(AREA.NAME),
+    Vict.Sex = as.factor(Vict.Sex),
+    Crm.Cd = as.factor(Crm.Cd)
+  )
+dim(crime_data_rf)
+
+
+# Create feature matrix and target variable
+X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex,Vict.Age, LAT, LON)
+y <- crime_data_rf$Crm.Cd
+
+# Split the data
+set.seed(42)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+X_test <- X[-train_index, ]
+y_train <- y[train_index]
+y_test <- y[-train_index]
+
+# Train Random Forest model
+rf_model <- randomForest(x = X_train, y = y_train, ntree = 500)
+
+# Make predictions
+y_pred <- predict(rf_model, X_test)
+
+# Calculate accuracy
+accuracy <- sum(y_pred == y_test) / length(y_test)
+accuracy_percentage <- accuracy * 100
+
+print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
 ```
 
