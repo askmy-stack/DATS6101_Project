@@ -56,7 +56,13 @@ Focus on Crime Analysis in Los Angeles from 2020 to present using a dataset cont
 
 
 ```{r 1, echo=T, results='markup'}
+<<<<<<< HEAD
 crime = read.csv("Crime_Data_from_2020_to_Present.csv")
+=======
+
+crime = read.csv("/Users/amoghramagiri/Documents/mid_term_project/DATS6101_Project/Crime_Data.csv")
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
 head(crime)
 ```
 ## Date Analysis and Cleaning 0.1
@@ -693,6 +699,7 @@ ggplot(combined_df, aes(x = Date)) +
 
 
 
+<<<<<<< HEAD
 SMART Question
 
 How accurately can we predict the time taken to report different types of crimes in Los Angeles, considering factors such as crime type, location, and victim demographics, to identify potential reporting delays that might affect crime investigation efficiency ?
@@ -1406,6 +1413,9 @@ print(comparison)
 ```
 
 
+=======
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
 
 
 ```{r}
@@ -1631,5 +1641,113 @@ roc_curve <- roc(y_test, as.numeric(predictions))
 plot(roc_curve, main="ROC Curve for LA Crime Prediction")
 auc_value <- auc(roc_curve)
 cat("\nArea Under the Curve (AUC):", round(auc_value, 4), "\n")
+<<<<<<< HEAD
+=======
+=======
+SMART Question
+
+1. How effectively can crime prediction models utilize historical data on the top three most common crimes in Los Angeles to forecast their distribution across high-frequency areas?
+
+```{r}
+library(dplyr)
+library(lubridate)
+crime_data$DATE.OCC <- as.Date(crime_data$DATE.OCC, format = "%m/%d/%Y")
+
+# Identify top 3 crimes overall from 2020 to present
+top_crimes <- crime_data %>%
+  filter(year(DATE.OCC) >= 2020 & year(DATE.OCC) <= 2023 ) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  head(3)
+
+top_crime_locations <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, AREA.NAME) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+
+
+# Analyze temporal patterns
+top_crime_temporal <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  mutate(month = month(Date_Occ),
+         day_of_week = wday(Date_Occ, label = TRUE)) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, month, day_of_week) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+
+
+# Analyze demographic factors
+top_crime_demographics <- crime_data %>%
+  filter(year(Date_Occ) >= 2020 & year(Date_Occ) <= 2023,
+         Crm.Cd %in% top_crimes$Crm.Cd) %>%
+  group_by(Crm.Cd, Crm.Cd.Desc, Vict.Sex, Vict.Descent) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(Crm.Cd, desc(count))
+```
+
+```{r}
+top_crimes
+top_crime_locations
+
+top_crime_temporal
+top_crime_demographics
+```
+
+
+
+```{r}
+library(randomForest)
+library(caret)
+library(lubridate)
+library(dplyr)
+
+crime_data_new <- crime_data[crime_data$Vict.Age != 0, ]
+crime_data_new <- crime_data_new %>% filter(LAT != 0 | LON != 0)
+
+crime_data_rf <- crime_data_new %>%
+  filter(
+    Crm.Cd %in% c(510, 624, 354),
+    year(Date_Occ) >= 2020 & year(Date_Occ) <=2023) %>%
+  mutate(
+    month = month(Date_Occ),
+    day_of_week = as.factor(wday(Date_Occ)),
+    AREA.NAME = as.factor(AREA.NAME),
+    Vict.Sex = as.factor(Vict.Sex),
+    Crm.Cd = as.factor(Crm.Cd)
+  )
+dim(crime_data_rf)
+
+
+# Create feature matrix and target variable
+X <- crime_data_rf %>% select(AREA.NAME, month, day_of_week, Vict.Sex,Vict.Age, LAT, LON)
+y <- crime_data_rf$Crm.Cd
+
+# Split the data
+set.seed(42)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+X_test <- X[-train_index, ]
+y_train <- y[train_index]
+y_test <- y[-train_index]
+
+# Train Random Forest model
+rf_model <- randomForest(x = X_train, y = y_train, ntree = 500)
+
+# Make predictions
+y_pred <- predict(rf_model, X_test)
+
+# Calculate accuracy
+accuracy <- sum(y_pred == y_test) / length(y_test)
+accuracy_percentage <- accuracy * 100
+
+print(paste("Model Accuracy:", round(accuracy_percentage, 2), "%"))
+
+>>>>>>> a54e9079b6a6db6ad124b84027ffd4e3ab763e6a
 ```
 
