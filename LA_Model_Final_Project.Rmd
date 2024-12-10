@@ -822,7 +822,42 @@ print(paste("XGBoost Model Accuracy:", round(xgb_accuracy_percentage, 2), "%"))
 importance_matrix <- xgb.importance(feature_names = colnames(X_train_xgb), model = xgb_model)
 print(importance_matrix)
 ```
+#SMART QUESTION 2 
 
+How can we analyze the increase in crime rates across Los Angeles neighborhoods from 2020 to 2023 to identify victim demographic patterns, across high-crime areas on a monthly basis?
+
+```{r}
+# Extract Year from Date_Occurred
+la_crime$Year <- as.numeric(format(as.Date(la_crime$Date_Occurred, format="%m/%d/%Y"), "%Y"))
+
+# Filter data from 2020 to 2023
+la_crime_filtered <- la_crime %>%
+  filter(Year >= 2020 & Year <= 2023)
+
+# Group by Year, Area, Victim Sex, and Descent
+crime_trends <- la_crime_filtered %>%
+  group_by(Year, Area_Name, Victim_Sex, Victim_Descent) %>%
+  summarise(Crime_Count = n()) %>%
+  ungroup()
+
+
+
+# Total Crime Count by Year
+crime_yearly <- la_crime_filtered %>%
+  group_by(Year) %>%
+  summarise(Total_Crime = n())
+
+# Plot Crime Trends Over Years
+library(ggplot2)
+
+ggplot(crime_yearly, aes(x=Year, y=Total_Crime)) +
+  geom_line(color="blue", size=1.2) +
+  geom_point(size=2) +
+  labs(title="Total Crimes in Los Angeles (2020-2023)",
+       x="Year", y="Total Crime Count") +
+  theme_minimal()
+
+```
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
 ```{r 3.1, echo=T, results='markup'}
