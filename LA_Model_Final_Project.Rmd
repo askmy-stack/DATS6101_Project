@@ -1405,3 +1405,97 @@ comparison <- data.frame(
 print(comparison)
 ```
 
+```{r}
+# Filter data for November and December
+crime_data_clean$Month <- as.numeric(format(crime_data_clean$Date_Occ, "%m"))
+crime_data_nov_dec <- crime_data_clean %>%
+  filter(Month %in% c(11, 12))
+
+cat("Number of records for November and December:", nrow(crime_data_nov_dec), "\n")
+
+# Top 5 Crimes in November and December
+crime_summary <- crime_data_nov_dec %>%
+  group_by(Crm.Cd.Desc) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 crimes in November and December:\n")
+print(head(crime_summary, 5))
+
+# Plot Top 5 Crimes
+library(ggplot2)
+top_5_crimes <- crime_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_crimes, aes(x = reorder(Crm.Cd.Desc, Count), y = Count, fill = Crm.Cd.Desc)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Crimes in November and December", x = "Crime Type", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Top 5 Areas with Most Crimes
+area_summary <- crime_data_nov_dec %>%
+  group_by(AREA.NAME) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 areas with highest crimes in November and December:\n")
+print(head(area_summary, 5))
+
+# Plot Top 5 Areas
+top_5_areas <- area_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_areas, aes(x = reorder(AREA.NAME, Count), y = Count, fill = AREA.NAME)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Areas with Highest Crimes (Nov & Dec)", x = "Area Name", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Victim Age Group Analysis
+age_group_summary <- crime_data_nov_dec %>%
+  group_by(age_group) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Victim age group distribution:\n")
+print(age_group_summary)
+
+ggplot(age_group_summary, aes(x = age_group, y = Count, fill = age_group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Victim Age Group Distribution (Nov & Dec)", x = "Age Group", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Time Period
+time_period_summary <- crime_data_nov_dec %>%
+  group_by(time_period) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by time period:\n")
+print(time_period_summary)
+
+ggplot(time_period_summary, aes(x = time_period, y = Count, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Time Period (Nov & Dec)", x = "Time Period", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Day of the Week
+day_of_week_summary <- crime_data_nov_dec %>%
+  group_by(day_of_week) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by day of the week:\n")
+print(day_of_week_summary)
+
+ggplot(day_of_week_summary, aes(x = reorder(day_of_week, -Count), y = Count, fill = day_of_week)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Day of the Week (Nov & Dec)", x = "Day of Week", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
