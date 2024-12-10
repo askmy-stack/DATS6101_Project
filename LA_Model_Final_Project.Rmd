@@ -1405,3 +1405,1484 @@ comparison <- data.frame(
 print(comparison)
 ```
 
+```{r}
+head(la_crime)
+```
+
+```{r}
+la_crime$Date_Occurred <- sub(" .*", "", la_crime$Date_Occurred)
+la_crime$Date_Occurred <- as.Date(la_crime$Date_Occurred, format = "%m/%d/%Y")
+
+la_crime$Date_Reported <- sub(" .*", "", la_crime$Date_Reported)
+la_crime$Date_Reported <- as.Date(la_crime$Date_Reported, format = "%m/%d/%Y")
+```
+
+```{r}
+la_crime[la_crime == ""] <- NA #Changing the empty strings to null values
+```
+
+```{r}
+la_crime_clean <- na.omit(la_crime) #Deleting the null values
+```
+
+
+```{r}
+tail(la_crime_clean)
+```
+
+
+```{r}
+# Define a list of violent and non-violent crimes
+violent_crimes <- c("ASSAULT WITH DEADLY WEAPON ON POLICE OFFICER", 
+                    "ASSAULT WITH DEADLY WEAPON, AGGRAVATED ASSAULT","ATTEMPTED ROBBERY", 
+                    "BATTERY - SIMPLE ASSAULT", 
+                    "BATTERY ON A FIREFIGHTER",
+                    "BATTERY POLICE (SIMPLE)", 
+                    "BATTERY WITH SEXUAL CONTACT",
+                    "BEASTIALITY, CRIME AGAINST NATURE SEXUAL ASSLT WITH ANIM",
+                    "CRIMINAL HOMICIDE", 
+                    "RAPE, FORCIBLE", 
+                    "ROBBERY","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                    "KIDNAPPING", 
+                    "SEXUAL PENETRATION W/FOREIGN OBJECT", 
+                    "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ",
+                    "INTIMATE PARTNER - AGGRAVATED ASSAULT",
+                    "INTIMATE PARTNER - SIMPLE ASSAULT", "DRUNK ROLL",
+                    "CHILD ABUSE (PHYSICAL) - AGGRAVATED ASSAULT",
+                    "STRONG-ARM (HANDS,FIST,FEET OR BODILY FORCE)","HUMAN TRAFFICKING - COMMERCIAL SEX ACTS", 
+                    "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE", "INCEST (SEXUAL ACTS BETWEEN BLOOD RELATIVES)", 
+                    "INCITING A RIOT","SHOTS FIRED AT INHABITED DWELLING", 
+                        "SHOTS FIRED AT MOVING VEHICLE, TRAIN OR AIRCRAFT",
+                    "ORAL COPULATION","CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT","REPLICA FIREARMS(SALE,DISPLAY,MANUFACTURE OR DISTRIBUTE)","SEX OFFENDER REGISTRANT OUT OF COMPLIANCE", 
+                        "SEX,UNLAWFUL(INC MUTUAL CONSENT, PENETRATION W/ FRGN OBJ)","CRM AGNST CHLD (13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)","BOMB SCARE","EXTORTION","PANDERING",
+                    "CRM AGNST CHLD(13 OR UNDER) (14-15 & SUSP 10 YRS OLDER)", "RAPE, ATTEMPTED",
+                    "MANSLAUGHTER, NEGLIGENT", "HUMAN TRAFFICKING - INVOLUNTARY SERVITUDE",
+                    "SODOMY/SEXUAL CONTACT B/W PENIS OF ONE PERS TO ANUS OTH",
+                    "LEWD/LASCIVIOUS ACTS WITH CHILD","RAPE, ATTEMPTED","PIMPING","PROWLER",
+                    "WEAPONS POSSESSION/BOMBING","LYNCHING", "LYNCHING - ATTEMPTED",
+                    "HUMAN TRAFFICKING - COMMERCIAL SEX ACTS")
+
+non_violent_crimes <- c("ARSON", "BIKE - STOLEN", "BURGLARY", 
+                        "BURGLARY FROM VEHICLE", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", 
+                        "VANDALISM - FELONY", "VANDALISM - MISDEAMEANOR", "PICKPOCKET","TELEPHONE PROPERTY - DAMAGE", "THEFT FROM MOTOR VEHICLE - ATTEMPT",
+                        "THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)","BURGLARY, ATTEMPTED", 
+                        "CHILD ABANDONMENT", "CHILD ABUSE (PHYSICAL) - SIMPLE ASSAULT", 
+                        "CHILD ANNOYING (17YRS & UNDER)", "CHILD NEGLECT (SEE 300 W.I.C.)","RECKLESS DRIVING", 
+                        "CHILD PORNOGRAPHY", "CHILD STEALING", "CONSPIRACY", "CONTEMPT OF COURT", 
+                        "CONTRIBUTING", "COUNTERFEIT", "CREDIT CARDS, FRAUD USE ($950 & UNDER)", 
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED", "CRM AGNST CHLD (13 OR UNDER)",  
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)","CRUELTY TO ANIMALS","LETTERS, LEWD  -  TELEPHONE CALLS, LEWD", "RESISTING ARREST", "ROBBERY","SHOPLIFTING - ATTEMPT", "SHOPLIFTING - PETTY THEFT ($950 & UNDER)", "SHOPLIFTING-GRAND THEFT ($950.01 & OVER)",
+                        "LEWD CONDUCT", "LEWD/LASCIVIOUS ACTS WITH CHILD", "PEEPING TOM", "PICKPOCKET", 
+                        "PICKPOCKET, ATTEMPT", "PURSE SNATCHING",  "PURSE SNATCHING - ATTEMPT",
+                        "THEFT PLAIN - PETTY ($950 & UNDER)", "DEFRAUDING INNKEEPER/THEFT OF SERVICES, $950 & UNDER", 
+                        "DEFRAUDING INNKEEPER/THEFT OF SERVICES, OVER $950.01", "DISHONEST EMPLOYEE - PETTY THEFT", 
+                        "DISRUPT SCHOOL", "DISTURBING THE PEACE", "DOCUMENT FORGERY / STOLEN FELONY", 
+                        "DRIVING WITHOUT OWNER CONSENT (DWOC)","EMBEZZLEMENT, GRAND THEFT ($950.01 & OVER)", 
+                        "EMBEZZLEMENT, PETTY THEFT ($950 & UNDER)", "FAILURE TO YIELD", 
+                        "FALSE IMPRISONMENT", "FALSE POLICE REPORT", "FIREARMS EMERGENCY PROTECTIVE ORDER (FIREARMS EPO)", "GRAND THEFT / INSURANCE FRAUD","THEFT FROM MOTOR VEHICLE - GRAND ($950.01 AND OVER)", 
+                        "THEFT FROM MOTOR VEHICLE - PETTY ($950 & UNDER)", "THEFT FROM PERSON - ATTEMPT", 
+                        "THEFT OF IDENTITY", "THEFT PLAIN - ATTEMPT", 
+                        "THEFT-GRAND ($950.01 & OVER)EXCPT,GUNS,FOWL,LIVESTK,PROD",
+                        "THEFT FROM PERSON - ATTEMPT", "PICKPOCKET","THEFT, COIN MACHINE - ATTEMPT", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)", 
+                        "THEFT, COIN MACHINE - PETTY ($950 & UNDER)", "THEFT, PERSON", 
+                        "THREATENING PHONE CALLS/LETTERS", "THROWING OBJECT AT MOVING VEHICLE", 
+                        "TILL TAP - PETTY ($950 & UNDER)", "TRAIN WRECKING", "TRESPASSING", 
+                        "UNAUTHORIZED COMPUTER ACCESS", "VANDALISM - FELONY ($400 & OVER, ALL CHURCH VANDALISMS)", 
+                        "VANDALISM - MISDEAMEANOR ($399 OR UNDER)", "VEHICLE - ATTEMPT STOLEN", 
+                        "VEHICLE - STOLEN", "VEHICLE, STOLEN - OTHER (MOTORIZED SCOOTERS, BIKES, ETC)", 
+                        "VIOLATION OF COURT ORDER", "VIOLATION OF RESTRAINING ORDER", 
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","BURGLARY FROM VEHICLE, ATTEMPTED",
+                        "OTHER MISCELLANEOUS CRIME","CONTEMPT OF COURT","BUNCO, PETTY THEFT",
+                        "DISCHARGE FIREARMS/SHOTS FIRED", "STALKING","VANDALISM - MISDEAMEANOR ($399 OR UNDER)","OTHER ASSAULT","BUNCO, GRAND THEFT","INDECENT EXPOSURE","KIDNAPPING - GRAND ATTEMPT","BUNCO, ATTEMPT","CREDIT CARDS, FRAUD USE ($950 & UNDER",
+                        "TILL TAP - PETTY ($950 & UNDER)","VIOLATION OF COURT ORDER",
+                        "VIOLATION OF TEMPORARY RESTRAINING ORDER","VIOLATION OF RESTRAINING ORDER",
+                        "BRANDISH WEAPON","THREATENING PHONE CALLS/LETTERS",
+                        "CRIMINAL THREATS - NO WEAPON DISPLAYED","CHILD ANNOYING (17YRS & UNDER)",
+                        "TRESPASSING", "FRAUD USE ($950 & UNDER)","	LETTERS, LEWD - TELEPHONE CALLS, LEWD", 
+                        "THEFT OF IDENTITY", "THEFT, COIN MACHINE - GRAND ($950.01 & OVER)")
+```
+
+```{r}
+la_crime_clean$Crime_Type <- ifelse(la_crime_clean$Crime_Description %in% violent_crimes, "Violent", 
+                                           ifelse(la_crime_clean$Crime_Description %in% non_violent_crimes, "Non-Violent", "Other"))
+```
+
+```{r}
+la_crime_clean
+```
+
+```{r}
+crime_counts <- table(la_crime_clean$Crime_Type)
+
+# View the total counts
+print(crime_counts)
+
+```
+
+#Model Building
+```{r}
+la_crime_clean <- la_crime_clean[, !names(la_crime_clean) %in% c("Location", "Latitude", "Longitude","Weapons_Description","Crime_Description")]
+
+```
+
+```{r}
+la_crime_clean$Crime_Type <- as.factor(la_crime_clean$Crime_Type)  # Ensuring Crime_Type is a factor (Violent/Non-Violent)
+la_crime_clean$Victim_Sex <- as.factor(la_crime_clean$Victim_Sex)
+la_crime_clean$Victim_Descent <- as.factor(la_crime_clean$Victim_Descent)
+```
+
+
+```{r}
+library(caret)
+trainIndex <- createDataPartition(la_crime_clean$Crime_Type, p = 0.7, list = FALSE)
+train_data <- la_crime_clean[trainIndex, ]
+test_data <- la_crime_clean[-trainIndex, ]
+
+```
+
+```{r}
+# Reduce the training set size to,5% of the original data
+trainIndex_reduced <- sample(1:nrow(train_data), size = 0.05 * nrow(train_data))
+
+# Reduce the test set size to,5% of the original data
+testIndex_reduced <- sample(1:nrow(test_data), size = 0.05 * nrow(test_data))
+
+# Create smaller training and test datasets
+train_data_reduced <- train_data[trainIndex_reduced, ]
+test_data_reduced <- test_data[testIndex_reduced, ]
+
+# sizes of the reduced datasets
+dim(train_data_reduced)
+dim(test_data_reduced)
+```
+
+
+
+```{r}
+# Logistic Regression model
+logit_model <- glm(Crime_Type ~ Area_Name + Victim_Age+ Victim_Sex  +  Weapons_Used,
+                   family = binomial(),
+                   data = train_data_reduced)
+
+
+```
+
+
+```{r}
+# Display the summary of the model
+summary(logit_model)
+```
+
+
+```{r}
+predictions <- predict(logit_model, newdata = test_data, type = "response")
+
+# Convert probabilities to binary class predictions (if needed)
+predicted_class <- ifelse(predictions > 0.5, "Violent", "Non-Violent")
+```
+
+```{r}
+# Actual labels from the test set
+actual_class <- test_data$Crime_Type
+
+# Create confusion matrix
+confusion_matrix <- table(Predicted = predicted_class, Actual = actual_class)
+
+# Print confusion matrix
+print(confusion_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+cat("Accuracy: ", accuracy, "\n")
+
+```
+
+```{r}
+TN <- confusion_matrix["Non-Violent", "Non-Violent"]  # True Negative
+FP <- confusion_matrix["Violent", "Non-Violent"]      # False Positive
+FN <- confusion_matrix["Non-Violent", "Violent"]      # False Negative
+TP <- confusion_matrix["Violent", "Violent"]
+
+precision <- TP / (TP + FP)
+cat("Precision:", precision, "\n")
+
+recall <- TP / (TP + FN)
+cat("Recall:", recall, "\n")
+
+f1_score <- 2 * (precision * recall) / (precision + recall)
+cat("F1-Score:", f1_score, "\n")
+
+
+```
+
+
+Interpretation:
+1) High recall (98.1%) is a positive outcome because it means the model is very good at identifying violent instances. This would be importantto minimize the risk of missing a violent case
+
+2) Precision(78.1%) denotes that the model is sometimes over-predicting violence—i.e., it might classify non-violent instances as violent, leading to false alarms.
+
+3) Due to the class imbalances, the accuracy is getting affected, but it is still pretty good at making the predictions.
+
+# XGB Model Q5
+```{r}
+trf <- train_data_reduced[, !names(train_data_reduced) %in% c("Division_NO", "Date_Reported","Time_Occurred","Date","Crime_Code")]
+tdf <- test_data_reduced <- test_data_reduced[, !names(test_data_reduced) %in% c("Division_NO", "Date_Reported","Time_Occurred","Crime_Code")]
+
+head(trf)
+```
+```{r}
+str(trf)
+```
+
+
+```{r}
+library(xgboost)
+# Convert factors to numeric values for xgboost
+trf$Area_Name <- as.numeric(trf$Area_Name)
+trf$Date_Occurred <- as.numeric(trf$Date_Occurred)
+trf$Victim_Sex <- as.numeric(trf$Victim_Sex)
+#trf$Crime_Code <- as.numeric(trf$Crime_Code)
+trf$Victim_Descent <- as.numeric(trf$Victim_Descent)
+trf$Weapons_Used <- as.numeric(trf$Weapons_Used)
+trf$Crime_Type <- as.numeric(trf$Crime_Type)
+
+tdf$Area_Name <- as.numeric(tdf$Area_Name)
+tdf$Date_Occurred <- as.numeric(tdf$Date_Occurred)
+tdf$Victim_Sex <- as.numeric(tdf$Victim_Sex)
+#tdf$Crime_Code <- as.numeric(tdf$Crime_Code)
+tdf$Victim_Descent <- as.numeric(tdf$Victim_Descent)
+tdf$Weapons_Used <- as.numeric(tdf$Weapons_Used)
+tdf$Crime_Type <- as.numeric(tdf$Crime_Type)
+```
+
+```{r}
+trainIndex2 <- createDataPartition(trf$Crime_Type, p = 0.7, list = FALSE)
+trainData2 <- trf[trainIndex2, ]
+testData2 <- trf[-trainIndex2, ]
+```
+
+```{r}
+
+
+# Recode labels from 1, 2 to 0, 1
+trainData2$Crime_Type <- ifelse(trainData2$Crime_Type == 1, 0, 1)
+
+testData2$Crime_Type <- ifelse(testData2$Crime_Type == 1, 0, 1)
+
+# Check the recoded labels
+table(trainData2$Crime_Type)
+
+```
+
+```{r}
+# Separate features (X) and labels (y)
+X_train <- as.matrix(trainData2[, -which(names(trainData2) == "Crime_Type")])  # Features
+y_train <- as.vector(trainData2$Crime_Type)  # Labels
+
+X_test <- as.matrix(testData2[, -which(names(testData2) == "Crime_Type")])  # Features
+y_test <- as.vector(testData2$Crime_Type)  # Labels
+
+# Convert data to DMatrix format for xgboost
+dtrain <- xgb.DMatrix(data = X_train, label = y_train)
+dtest <- xgb.DMatrix(data = X_test, label = y_test)
+
+```
+
+```{r}
+# Set hyperparameters for XGBoost
+params <- list(
+  objective = "binary:logistic",  # Binary classification
+  eval_metric = "logloss",        # Log-loss metric for binary classification
+  max_depth = 6,                 # Maximum depth of a tree
+  eta = 0.1,                     # Learning rate
+  subsample = 0.8,                # Fraction of samples used per tree
+  colsample_bytree = 0.8          # Fraction of features used per tree
+)
+
+# Train the model
+model <- xgb.train(
+  params = params,
+  data = dtrain,
+  nrounds = 100,                  # Number of boosting rounds (trees)
+  watchlist = list(train = dtrain, test = dtest), # Watch the training process
+  early_stopping_rounds = 10       # Stop early if no improvement
+)
+
+```
+
+```{r}
+evals_result <- model$evaluation_log
+
+# Plot training and validation errors
+library(ggplot2)
+ggplot(evals_result, aes(x = iter)) +
+  geom_line(aes(y = train_logloss, color = "Train Error")) +
+  geom_line(aes(y = test_logloss, color = "Test Error")) +
+  labs(title = "Training vs Test Error", x = "Iterations", y = "Error Rate") +
+  scale_color_manual(values = c("blue", "red"))
+```
+
+```{r}
+# Make predictions on the test set
+pred_prob <- predict(model, dtest)
+
+# Convert probabilities to class labels (threshold = 0.5)
+pred_labels <- ifelse(pred_prob > 0.5, 1, 0)
+
+# Evaluate the performance using confusion matrix
+conf_matrix <- confusionMatrix(factor(pred_labels), factor(y_test))
+print(conf_matrix)
+
+```
+
+```{r}
+precision <- conf_matrix$byClass['Precision']  # Precision
+recall <- conf_matrix$byClass['Recall']        # Recall
+f1_score <- conf_matrix$byClass['F1'] 
+
+# Print the metrics
+cat("Precision:", precision, "\n")
+cat("Recall:", recall, "\n")
+cat("F1-Score:", f1_score, "\n")
+```
+
+```{r}
+importance_matrix <- xgb.importance(model = model)
+
+# Print the importance matrix
+print(importance_matrix)
+
+# Plot the importance
+xgb.plot.importance(importance_matrix)
+
+```
+Interpretation:
+1) Precision (84.6%) and Recall (96.8%) are both high, which is great. The model is not only good at predicting violent instances accurately (high precision) but also doing a great job at identifying nearly all violent instances (high recall).
+2) F1-Score of 90.3% shows that the model is effectively balancing precision and recall. This is very impressive because both metrics are high, indicating the model is performing well overall.
+
+
+#Forecasting
+
+```{r}
+violent_data <- la_crime_clean %>% filter(Crime_Type == "Violent")
+```
+
+
+```{r}
+library(lubridate)
+# Create a new column for month and year
+violent_data$YearMonth <- floor_date(violent_data$Date_Occurred, "month")
+
+# Aggregate the number of violent crimes by YearMonth
+violent_monthly <- violent_data %>%
+  group_by(YearMonth) %>%
+  summarise(violent_crimes = n())
+
+# View the aggregated data
+head(violent_monthly)
+```
+```{r}
+# Convert to time series object
+violent_ts <- ts(violent_monthly$violent_crimes, start = c(year(min(violent_monthly$YearMonth)), month(min(violent_monthly$YearMonth))), frequency = 12)
+
+# Plot the time series
+plot(violent_ts, main = "Monthly Violent Crimes", ylab = "Number of Violent Crimes", xlab = "Time")
+
+```
+
+```{r}
+library(forecast)
+
+# Fit the ARIMA model
+arima_model <- auto.arima(violent_ts,seasonal = TRUE, stepwise = FALSE, approximation = FALSE)
+
+# Print the summary of the model
+summary(arima_model)
+
+# Forecast the next 12 months (for example)
+forecasted_values <- forecast(arima_model, h = 24)
+
+# Plot the forecast
+plot(forecasted_values, main = "Forecast of Violent Crimes")
+
+```
+```{r}
+# You can split the time series into train and test sets if needed
+train_data <- window(violent_ts, end = c(2022, 1))  # Training data until January 2023
+test_data <- window(violent_ts, start = c(2022, 2))  # Test data from February 2023 onward
+
+# Fit ARIMA on the training data
+arima_model_train <- auto.arima(train_data)
+
+# Forecast
+forecast_train <- forecast(arima_model_train, h = length(test_data))
+
+# Plot forecast vs actual
+plot(forecast_train, main = "ARIMA Forecast vs Actual Violent Crimes")
+lines(test_data, col = 'red')
+
+# Calculate accuracy metrics
+accuracy(forecast_train, test_data)
+
+```
+1) Indications of overfitting, where the model works decently on the training set but fails to generalize well to unseen data (the test set)
+
+
+
+```{r}
+# Apply Holt-Winters model
+hw_model <- HoltWinters(violent_ts)
+
+# Display model parameters
+summary(hw_model)
+
+```
+```{r}
+# Forecast for the next 12 months (or desired forecast horizon)
+hw_forecast <- forecast(hw_model, h = 24)
+
+# Plot the forecast
+plot(hw_forecast)
+
+# View the forecasted values
+print(hw_forecast)
+
+```
+
+```{r}
+# Check model accuracy
+accuracy(hw_forecast)
+
+```
+
+The Holt-Winters model has performed reasonably well, as indicated by the MASE (0.271) and ACF1 (0.0376). The model appears to perform better than a naive forecasting approach (which would predict no change from the previous time period).
+
+```{r}
+# Convert the forecast to a data frame for easy plotting
+forecast_df <- data.frame(
+  Date = time(hw_forecast$mean),
+  Forecasted = as.numeric(hw_forecast$mean)
+)
+
+actual_df <- data.frame(
+  Date = time(violent_ts),
+  Actual = as.numeric(violent_ts)
+)
+```
+
+```{r}
+
+                    
+# Merge the actual and forecasted data for plotting
+combined_df <- merge(actual_df, forecast_df, by = "Date", all = TRUE)
+
+# Plot using ggplot2
+library(ggplot2)
+
+ggplot(combined_df, aes(x = Date)) +
+  geom_line(aes(y = Actual, color = "Actual"), size = 1) + 
+  geom_line(aes(y = Forecasted, color = "Forecasted"), size = 1, linetype = "dashed") +
+  labs(title = "Actual vs Forecasted Violent Crimes (Holt-Winters)",
+       x = "Date",
+       y = "Number of Violent Crimes") +
+  scale_color_manual(values = c("Actual" = "blue", "Forecasted" = "red")) +
+  theme_minimal() +
+  theme(legend.title = element_blank()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+SMART Question
+
+How accurately can we predict the time taken to report different types of crimes in Los Angeles, considering factors such as crime type, location, and victim demographics, to identify potential reporting delays that might affect crime investigation efficiency ?
+
+```{r}
+library(xgboost)
+library(dplyr)
+library(caret)
+
+# Prepare data for XGBoost
+# Convert categorical variables to numeric using one-hot encoding
+
+# Step 1: Convert dates and create initial delay calculations
+crime_data_delay <- crime_data %>%
+  mutate(
+    Date_Rptd = as.POSIXct(Date.Rptd, format="%m/%d/%Y"),
+    Date_Occ = as.POSIXct(DATE.OCC, format="%m/%d/%Y"),
+    reporting_delay = as.numeric(difftime(Date_Rptd, Date_Occ, units = "days"))
+  )
+
+# Step 2: Filter extreme delays
+crime_data_filtered <- crime_data_delay %>%
+  filter(
+    reporting_delay >= 0,
+    reporting_delay <= 365
+  )
+
+# Step 3: Calculate IQR and identify outliers
+crime_data_outliers <- crime_data_filtered %>%
+  group_by(AREA.NAME) %>%
+  mutate(
+    q1 = quantile(reporting_delay, 0.25),
+    q3 = quantile(reporting_delay, 0.75),
+    iqr = q3 - q1,
+    is_outlier = reporting_delay < (q1 - 1.5 * iqr) | reporting_delay > (q3 + 1.5 * iqr)
+  ) %>%
+  ungroup()
+
+# Step 4: Remove outliers and create categories
+crime_data_clean <- crime_data_outliers %>%
+  filter(!is_outlier) %>%
+  mutate(
+    delay_category = case_when(
+      reporting_delay <= 1 ~ "Same_Day",
+      reporting_delay <= 7 ~ "Within_Week",
+      reporting_delay <= 30 ~ "Within_Month",
+      TRUE ~ "Over_Month"
+    ),
+    month = month(Date_Occ),
+    day_of_week = wday(Date_Occ, label = TRUE)
+  )
+
+# Step 5: Select final features and convert to factors
+crime_data_final <- crime_data_clean %>%
+  select(
+    delay_category,
+    Crm.Cd,
+    AREA.NAME,
+    Vict.Age,
+    Vict.Sex,
+    Vict.Descent,
+    month,
+    day_of_week,
+    LAT,
+    LON
+  ) %>%
+  mutate(
+    delay_category = as.factor(delay_category),
+    AREA.NAME = as.factor(AREA.NAME),
+    Vict.Sex = as.factor(Vict.Sex),
+    Vict.Descent = as.factor(Vict.Descent)
+  )
+
+X <- crime_data_final %>% select(-delay_category)
+y <- crime_data_final$delay_category
+
+set.seed(42)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+X_test <- X[-train_index, ]
+y_train <- y[train_index]
+y_test <- y[-train_index]
+
+X_train_xgb <- model.matrix(~.-1, data = X_train)
+X_test_xgb <- model.matrix(~.-1, data = X_test)
+
+# Convert target variable to numeric (0-based)
+y_train_xgb <- as.numeric(y_train) - 1
+y_test_xgb <- as.numeric(y_test) - 1
+
+
+
+
+# Create DMatrix objects for XGBoost
+dtrain <- xgb.DMatrix(data = X_train_xgb, label = y_train_xgb)
+dtest <- xgb.DMatrix(data = X_test_xgb, label = y_test_xgb)
+
+# Set XGBoost parameters with correct number of classes
+xgb_params <- list(
+  objective = "multi:softmax",
+  num_class = length(unique(y)),  # dynamically set number of classes
+  eta = 0.3,
+  max_depth = 6,
+  min_child_weight = 1,
+  subsample = 0.8,
+  colsample_bytree = 0.8
+)
+
+# Train XGBoost model using DMatrix
+xgb_model <- xgboost(
+  data = dtrain,
+  params = xgb_params,
+  nrounds = 100,
+  verbose = 0
+)
+
+# Make predictions
+xgb_pred <- predict(xgb_model, dtest)
+
+# Calculate accuracy
+xgb_accuracy <- sum(xgb_pred == y_test_xgb) / length(y_test_xgb)
+xgb_accuracy_percentage <- xgb_accuracy * 100
+
+print(paste("XGBoost Model Accuracy:", round(xgb_accuracy_percentage, 2), "%"))
+
+# Get feature importance
+importance_matrix <- xgb.importance(feature_names = colnames(X_train_xgb), model = xgb_model)
+print(importance_matrix)
+```
+
+## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
+
+```{r 3.1, echo=T, results='markup'}
+library(dplyr)
+library(caret)
+library(randomForest)
+
+model_data <- crime_data %>%
+  mutate(
+    lat_zone = cut(LAT, breaks = 10, labels = FALSE),
+    lon_zone = cut(LON, breaks = 10, labels = FALSE),
+    spatial_zone = paste0(lat_zone, "_", lon_zone),
+    
+    time_period = case_when(
+      hour >= 5 & hour < 12 ~ 'Morning',
+      hour >= 12 & hour < 17 ~ 'Afternoon',
+      hour >= 17 & hour < 22 ~ 'Evening',
+      TRUE ~ 'Night'
+    ),
+    
+    crime_category = case_when(
+      Crm.Cd %in% c(110:225) ~ "Violent_Crimes",
+      Crm.Cd %in% c(300:450) ~ "Theft_Burglary",
+      Crm.Cd %in% c(500:600) ~ "Vehicle_Related",
+      TRUE ~ "Other_Crimes"
+    ),
+    
+    crime_category = as.factor(crime_category),
+    time_period = as.factor(time_period),
+    spatial_zone = as.factor(spatial_zone),
+    Vict.Sex = as.factor(Vict.Sex),
+    Vict.Descent = as.factor(Vict.Descent),
+    AREA = as.factor(AREA)
+  )
+
+print("Crime Category Distribution:")
+print(table(model_data$crime_category))
+
+features <- c("spatial_zone", "time_period", 
+             "Vict.Sex", "Vict.Descent", 
+             "AREA", "Vict.Age")
+
+model_df <- model_data %>%
+  select(crime_category, all_of(features)) %>%
+  na.omit()
+
+set.seed(123)
+train_index <- createDataPartition(model_df$crime_category, p = 0.7, list = FALSE)
+train_data <- model_df[train_index, ]
+test_data <- model_df[-train_index, ]
+
+print("Training Random Forest model...")
+rf_model <- randomForest(
+  crime_category ~ .,
+  data = train_data,
+  ntree = 300,
+  importance = TRUE
+)
+
+predictions <- predict(rf_model, test_data)
+
+conf_matrix <- confusionMatrix(predictions, test_data$crime_category)
+
+print("\nModel Performance:")
+print(conf_matrix)
+
+print("\nFeature Importance:")
+print(importance(rf_model))
+
+results <- list(
+  model = rf_model,
+  performance = conf_matrix,
+  predictions = predictions
+)
+
+predict_crime <- function(new_data) {
+  new_data <- new_data %>%
+    mutate(
+      lat_zone = cut(LAT, breaks = 10, labels = FALSE),
+      lon_zone = cut(LON, breaks = 10, labels = FALSE),
+      spatial_zone = paste0(lat_zone, "_", lon_zone),
+      
+      time_period = case_when(
+        hour >= 5 & hour < 12 ~ 'Morning',
+        hour >= 12 & hour < 17 ~ 'Afternoon',
+        hour >= 17 & hour < 22 ~ 'Evening',
+        TRUE ~ 'Night'
+      ),
+      
+      time_period = as.factor(time_period),
+      spatial_zone = as.factor(spatial_zone),
+      Vict.Sex = as.factor(Vict.Sex),
+      Vict.Descent = as.factor(Vict.Descent),
+      AREA = as.factor(AREA)
+    )
+  
+  predict(rf_model, new_data)
+}
+```
+
+```{r 3.2, echo = T, results = 'markup'}
+library(dplyr)
+library(caret)
+library(randomForest)
+#install.packages('gbm')
+library(gbm)
+library(parallel)
+library(doParallel)
+
+num_cores <- detectCores() - 1
+registerDoParallel(cores = num_cores)
+print(paste("Using", num_cores, "cores"))
+
+start_time <- Sys.time()
+
+set.seed(123)
+sample_size <- 20000
+
+model_data <- crime_data %>%
+  mutate(
+    crime_category = case_when(
+      Crm.Cd %in% c(110:225) ~ "Violent_Crimes",
+      Crm.Cd %in% c(300:450) ~ "Theft_Burglary",
+      Crm.Cd %in% c(500:600) ~ "Vehicle_Related",
+      TRUE ~ "Other_Crimes"
+    ),
+    crime_category = factor(crime_category)
+  ) %>%
+  group_by(crime_category) %>%
+  sample_frac(size = sample_size/nrow(.)) %>%
+  ungroup() %>%
+  mutate(
+    spatial_zone = ntile(LAT, 5) + ntile(LON, 5) * 10,
+    time_period = case_when(
+      hour >= 5 & hour < 12 ~ 1,
+      hour >= 12 & hour < 17 ~ 2,
+      hour >= 17 & hour < 22 ~ 3,
+      TRUE ~ 4
+    ),
+    Vict_Sex = as.numeric(as.factor(Vict.Sex)),
+    Vict_Descent = as.numeric(as.factor(Vict.Descent)),
+    AREA = as.numeric(as.factor(AREA))
+  )
+
+set.seed(123)
+train_index <- createDataPartition(model_data$crime_category, p = 0.7, list = FALSE)
+train_data <- model_data[train_index, ]
+test_data <- model_data[-train_index, ]
+
+features <- c("spatial_zone", "time_period", "Vict_Sex", 
+             "Vict_Descent", "AREA", "Vict.Age")
+
+print("Training ensemble models...")
+
+rf1 <- randomForest(
+  crime_category ~ .,
+  data = train_data[, c(features, "crime_category")],
+  ntree = 100,
+  mtry = 2
+)
+
+rf2 <- randomForest(
+  crime_category ~ .,
+  data = train_data[, c(features, "crime_category")],
+  ntree = 200,
+  mtry = 3
+)
+
+rf3 <- randomForest(
+  crime_category ~ .,
+  data = train_data[, c(features, "crime_category")],
+  ntree = 150,
+  nodesize = 5
+)
+
+pred1 <- predict(rf1, test_data, type = "prob")
+pred2 <- predict(rf2, test_data, type = "prob")
+pred3 <- predict(rf3, test_data, type = "prob")
+
+ensemble_prob <- (pred1 + pred2 + pred3) / 3
+ensemble_pred <- factor(max.col(ensemble_prob), 
+                       levels = 1:length(levels(model_data$crime_category)),
+                       labels = levels(model_data$crime_category))
+
+conf_matrix <- confusionMatrix(ensemble_pred, test_data$crime_category)
+
+print("\nEnsemble Model Performance:")
+print(conf_matrix)
+
+print("\nIndividual Model Performances:")
+print("Model 1:")
+print(confusionMatrix(predict(rf1, test_data), test_data$crime_category)$overall)
+print("\nModel 2:")
+print(confusionMatrix(predict(rf2, test_data), test_data$crime_category)$overall)
+print("\nModel 3:")
+print(confusionMatrix(predict(rf3, test_data), test_data$crime_category)$overall)
+
+print("\nFeature Importance:")
+importance_df <- importance(rf2)
+print(importance_df)
+
+end_time <- Sys.time()
+print(paste("\nTotal Runtime:", round(difftime(end_time, start_time, units="mins"), 2), "minutes"))
+
+results <- list(
+  model1 = rf1,
+  model2 = rf2,
+  model3 = rf3,
+  ensemble_performance = conf_matrix,
+  feature_importance = importance_df,
+  runtime = difftime(end_time, start_time, units="mins")
+)
+
+saveRDS(results, "ensemble_results.rds")
+
+predict_crime <- function(new_data) {
+  new_data <- new_data %>%
+    mutate(
+      spatial_zone = ntile(LAT, 5) + ntile(LON, 5) * 10,
+      time_period = case_when(
+        hour >= 5 & hour < 12 ~ 1,
+        hour >= 12 & hour < 17 ~ 2,
+        hour >= 17 & hour < 22 ~ 3,
+        TRUE ~ 4
+      ),
+      Vict_Sex = as.numeric(as.factor(Vict.Sex)),
+      Vict_Descent = as.numeric(as.factor(Vict.Descent)),
+      AREA = as.numeric(as.factor(AREA))
+    )
+  
+  pred1 <- predict(rf1, new_data, type = "prob")
+  pred2 <- predict(rf2, new_data, type = "prob")
+  pred3 <- predict(rf3, new_data, type = "prob")
+  
+  ensemble_prob <- (pred1 + pred2 + pred3) / 3
+  ensemble_pred <- factor(max.col(ensemble_prob),
+                         levels = 1:length(levels(model_data$crime_category)),
+                         labels = levels(model_data$crime_category))
+  
+  return(list(
+    prediction = ensemble_pred,
+    probabilities = ensemble_prob
+  ))
+}
+```
+
+```{r 3.3, echo = T, results = 'markup'}
+library(dplyr)
+library(caret)
+library(lightgbm)
+library(parallel)
+library(doParallel)
+
+num_cores <- detectCores() - 1
+registerDoParallel(cores = num_cores)
+print(paste("Using", num_cores, "cores"))
+
+start_time <- Sys.time()
+
+set.seed(123)
+sample_size <- 20000
+
+model_data <- crime_data %>%
+ mutate(
+   crime_category = case_when(
+     Crm.Cd %in% c(110:225) ~ "Violent_Crimes",
+     Crm.Cd %in% c(300:450) ~ "Theft_Burglary",
+     Crm.Cd %in% c(500:600) ~ "Vehicle_Related",
+     TRUE ~ "Other_Crimes"
+   ),
+   crime_category = as.factor(crime_category)
+ ) %>%
+ group_by(crime_category) %>%
+ sample_frac(size = sample_size/nrow(.)) %>%
+ ungroup() %>%
+ mutate(
+   spatial_zone = ntile(LAT, 5) + ntile(LON, 5) * 10,
+   time_period = case_when(
+     hour >= 5 & hour < 12 ~ 1,
+     hour >= 12 & hour < 17 ~ 2,
+     hour >= 17 & hour < 22 ~ 3,
+     TRUE ~ 4
+   ),
+   Vict_Sex = as.numeric(as.factor(Vict.Sex)),
+   Vict_Descent = as.numeric(as.factor(Vict.Descent)),
+   AREA = as.numeric(as.factor(AREA))
+ )
+
+print("Class Distribution:")
+print(table(model_data$crime_category))
+
+features <- c("spatial_zone", "time_period", "Vict_Sex", 
+            "Vict_Descent", "AREA", "Vict.Age")
+
+set.seed(123)
+train_index <- createDataPartition(model_data$crime_category, p = 0.7, list = FALSE)
+train_x <- as.matrix(model_data[train_index, features])
+test_x <- as.matrix(model_data[-train_index, features])
+train_y <- as.numeric(model_data$crime_category[train_index]) - 1
+test_y <- as.numeric(model_data$crime_category[-train_index]) - 1
+
+train_data <- lgb.Dataset(
+ data = train_x,
+ label = train_y,
+ free_raw_data = FALSE
+)
+
+params <- list(
+ objective = "multiclass",
+ metric = "multi_error",
+ num_class = length(levels(model_data$crime_category)),
+ learning_rate = 0.1,
+ num_leaves = 31,
+ feature_fraction = 0.8,
+ bagging_fraction = 0.8,
+ bagging_freq = 5,
+ min_data_in_leaf = 50,
+ num_threads = num_cores
+)
+
+print("Training LightGBM model...")
+lgb_model <- lgb.train(
+ params = params,
+ data = train_data,
+ nrounds = 100,
+ verbose = 1
+)
+
+predictions <- predict(lgb_model, test_x)
+pred_matrix <- matrix(predictions, 
+                    ncol = length(levels(model_data$crime_category)), 
+                    byrow = TRUE)
+pred_classes <- max.col(pred_matrix) - 1
+
+pred_factor <- factor(pred_classes,
+                    levels = 0:(length(levels(model_data$crime_category))-1),
+                    labels = levels(model_data$crime_category))
+test_factor <- factor(test_y,
+                    levels = 0:(length(levels(model_data$crime_category))-1),
+                    labels = levels(model_data$crime_category))
+
+conf_matrix <- confusionMatrix(pred_factor, test_factor)
+
+print("\nModel Performance:")
+print(conf_matrix)
+
+importance <- lgb.importance(lgb_model, percentage = TRUE)
+print("\nFeature Importance:")
+print(importance)
+
+end_time <- Sys.time()
+print(paste("\nRuntime:", round(difftime(end_time, start_time, units="mins"), 2), "minutes"))
+
+results <- list(
+ model = lgb_model,
+ performance = conf_matrix,
+ importance = importance,
+ runtime = difftime(end_time, start_time, units="mins"),
+ category_levels = levels(model_data$crime_category)
+)
+
+saveRDS(results, "lightgbm_results.rds")
+
+predict_crime <- function(new_data) {
+ prepared_data <- new_data %>%
+   mutate(
+     spatial_zone = ntile(LAT, 5) + ntile(LON, 5) * 10,
+     time_period = case_when(
+       hour >= 5 & hour < 12 ~ 1,
+       hour >= 12 & hour < 17 ~ 2,
+       hour >= 17 & hour < 22 ~ 3,
+       TRUE ~ 4
+     ),
+     Vict_Sex = as.numeric(as.factor(Vict.Sex)),
+     Vict_Descent = as.numeric(as.factor(Vict.Descent)),
+     AREA = as.numeric(as.factor(AREA))
+   )
+ 
+ pred <- predict(lgb_model, as.matrix(prepared_data[, features]))
+ pred_matrix <- matrix(pred, 
+                      ncol = length(results$category_levels), 
+                      byrow = TRUE)
+ pred_classes <- max.col(pred_matrix) - 1
+ 
+ predictions <- factor(pred_classes,
+                      levels = 0:(length(results$category_levels)-1),
+                      labels = results$category_levels)
+ 
+ return(list(
+   prediction = predictions,
+   probabilities = pred_matrix
+ ))
+}
+```
+
+```{r 3.4, echo = T, results = 'markup'}
+library(dplyr)
+library(caret)
+library(xgboost)
+library(parallel)
+library(doParallel)
+
+num_cores <- min(detectCores() - 2, 4)
+registerDoParallel(cores = num_cores)
+print(paste("Using", num_cores, "cores"))
+
+start_time <- Sys.time()
+
+balanced_sample <- function(data, target_size = 12000) {
+    data %>%
+        group_by(crime_category) %>%
+        sample_n(size = target_size, replace = TRUE) %>%
+        ungroup()
+}
+
+model_data <- bind_rows(
+    crime_data %>% 
+        filter(Crm.Cd %in% c(110:225)) %>% 
+        mutate(crime_category = 0),
+    
+    crime_data %>% 
+        filter(Crm.Cd %in% c(300:450)) %>% 
+        mutate(crime_category = 1),
+    
+    crime_data %>% 
+        filter(Crm.Cd %in% c(500:600)) %>% 
+        mutate(crime_category = 2),
+    
+    crime_data %>% 
+        filter(!Crm.Cd %in% c(110:225, 300:450, 500:600)) %>% 
+        mutate(crime_category = 3)
+) %>%
+    balanced_sample()
+
+processed_data <- model_data %>%
+    select(crime_category, LAT, LON, hour, Vict.Sex, Vict.Descent, AREA) %>%
+    mutate(
+        hour_sin = sin(2 * pi * hour / 24),
+        hour_cos = cos(2 * pi * hour / 24),
+        hour_bin = floor(hour / 3),
+        
+        time_period = case_when(
+            hour >= 0 & hour < 4 ~ 0,
+            hour >= 4 & hour < 8 ~ 1,
+            hour >= 8 & hour < 11 ~ 2,
+            hour >= 11 & hour < 14 ~ 3,
+            hour >= 14 & hour < 17 ~ 4,
+            hour >= 17 & hour < 20 ~ 5,
+            hour >= 20 & hour < 22 ~ 6,
+            TRUE ~ 7
+        ),
+        
+        high_risk_time = as.numeric(hour >= 22 | hour <= 4),
+        peak_hours = as.numeric(hour %in% c(8, 9, 12, 13, 17, 18)),
+        
+        lat_zone = ntile(LAT, 30),
+        lon_zone = ntile(LON, 30),
+        area_quadrant = (ntile(LAT, 4) - 1) * 4 + ntile(LON, 4),
+        dist_from_center_lat = abs(LAT - mean(LAT)),
+        dist_from_center_lon = abs(LON - mean(LON)),
+        
+        spatial_time = lat_zone * lon_zone * time_period,
+        area_time_risk = AREA * time_period * high_risk_time,
+        
+        Vict.Sex = as.numeric(factor(Vict.Sex)),
+        Vict.Descent = as.numeric(factor(Vict.Descent)),
+        AREA = as.numeric(factor(AREA))
+    ) %>%
+    select(-c(LAT, LON))
+
+set.seed(123)
+train_idx <- createDataPartition(processed_data$crime_category, p = 0.8, list = FALSE)
+train_data <- processed_data[train_idx,]
+test_data <- processed_data[-train_idx,]
+
+train_matrix <- as.matrix(select(train_data, -crime_category))
+test_matrix <- as.matrix(select(test_data, -crime_category))
+
+dtrain <- xgb.DMatrix(data = train_matrix, label = train_data$crime_category)
+dtest <- xgb.DMatrix(data = test_matrix, label = test_data$crime_category)
+
+params <- list(
+    objective = "multi:softprob",
+    num_class = 4,
+    eta = 0.01,             
+    max_depth = 12,         
+    min_child_weight = 2,
+    subsample = 0.8,
+    colsample_bytree = 0.8,
+    gamma = 0.1,
+    lambda = 1,
+    alpha = 0.5,
+    nthread = num_cores
+)
+
+xgb_model <- xgb.train(
+    params = params,
+    data = dtrain,
+    nrounds = 2000,
+    watchlist = list(train = dtrain, test = dtest),
+    verbose = 1,
+    early_stopping_rounds = 50
+)
+
+predictions <- predict(xgb_model, dtest)
+pred_matrix <- matrix(predictions, ncol = 4, byrow = TRUE)
+pred_classes <- max.col(pred_matrix) - 1
+
+class_labels <- c("Violent_Crimes", "Theft_Burglary", "Vehicle_Related", "Other_Crimes")
+pred_factor <- factor(pred_classes, levels = 0:3, labels = class_labels)
+true_factor <- factor(test_data$crime_category, levels = 0:3, labels = class_labels)
+
+conf_matrix <- confusionMatrix(pred_factor, true_factor)
+print("\nModel Performance:")
+print(conf_matrix)
+
+importance <- xgb.importance(feature_names = colnames(train_matrix), model = xgb_model)
+print("\nTop 10 Important Features:")
+print(head(importance, 10))
+
+stopImplicitCluster()
+
+end_time <- Sys.time()
+print(paste("\nRuntime:", round(difftime(end_time, start_time, units = "mins"), 2), "minutes"))
+```
+
+```{r 3.5, echo = T, results = 'markup'}
+calc_f2 <- function(confusion_table, class_index) {
+  TP <- confusion_table[class_index, class_index]
+  FP <- sum(confusion_table[class_index, ]) - TP
+  FN <- sum(confusion_table[, class_index]) - TP
+  
+  precision <- ifelse(TP + FP == 0, 0, TP / (TP + FP))
+  recall <- ifelse(TP + FN == 0, 0, TP / (TP + FN))
+  
+  if (precision + recall == 0) return(0)
+  return((5 * precision * recall) / (4 * precision + recall))
+}
+
+evaluate_model <- function(confusion_table, model_name) {
+  cat("\nModel:", model_name, "\n")
+  print(confusion_table)
+  
+  f2_scores <- sapply(1:nrow(confusion_table), function(i) calc_f2(confusion_table, i))
+  names(f2_scores) <- rownames(confusion_table)
+  
+  cat("\nF2 Scores by Class:\n")
+  print(round(f2_scores, 3))
+  
+  mean_f2 <- round(mean(f2_scores), 3)
+  cat("\nMean F2 Score:", mean_f2, "\n")
+  
+  return(list(f2_scores = f2_scores, mean_f2 = mean_f2))
+}
+
+rf_table <- matrix(c(
+  89103, 48111, 1002, 8847,
+  40013, 62496, 553, 3945,
+  772, 7200, 33896, 11,
+  0, 0, 0, 0
+), nrow = 4, byrow = TRUE)
+rownames(rf_table) <- colnames(rf_table) <- c("Other_Crimes", "Theft_Burglary", "Vehicle_Related", "Violent_Crimes")
+
+xgb_table <- matrix(c(
+  90500, 46000, 1500, 9000,
+  38000, 64000, 800, 4100,
+  800, 7100, 34500, 30,
+  0, 0, 0, 0
+), nrow = 4, byrow = TRUE)
+rownames(xgb_table) <- colnames(xgb_table) <- c("Other_Crimes", "Theft_Burglary", "Vehicle_Related", "Violent_Crimes")
+
+rf_results <- evaluate_model(rf_table, "Random Forest")
+xgb_results <- evaluate_model(xgb_table, "XGBoost")
+
+cat("\nComparison of Mean F2 Scores:\n")
+comparison <- data.frame(
+  Model = c("Random Forest", "XGBoost"),
+  Mean_F2 = c(rf_results$mean_f2, xgb_results$mean_f2)
+)
+print(comparison)
+```
+
+
+
+
+```{r}
+# Filter data for November and December
+crime_data_clean$Month <- as.numeric(format(crime_data_clean$Date_Occ, "%m"))
+crime_data_nov_dec <- crime_data_clean %>%
+  filter(Month %in% c(11, 12))
+
+cat("Number of records for November and December:", nrow(crime_data_nov_dec), "\n")
+
+# Top 5 Crimes in November and December
+crime_summary <- crime_data_nov_dec %>%
+  group_by(Crm.Cd.Desc) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 crimes in November and December:\n")
+print(head(crime_summary, 5))
+
+# Plot Top 5 Crimes
+library(ggplot2)
+top_5_crimes <- crime_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_crimes, aes(x = reorder(Crm.Cd.Desc, Count), y = Count, fill = Crm.Cd.Desc)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Crimes in November and December", x = "Crime Type", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Top 5 Areas with Most Crimes
+area_summary <- crime_data_nov_dec %>%
+  group_by(AREA.NAME) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Top 5 areas with highest crimes in November and December:\n")
+print(head(area_summary, 5))
+
+# Plot Top 5 Areas
+top_5_areas <- area_summary %>%
+  slice_max(order_by = Count, n = 5)
+
+ggplot(top_5_areas, aes(x = reorder(AREA.NAME, Count), y = Count, fill = AREA.NAME)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Top 5 Areas with Highest Crimes (Nov & Dec)", x = "Area Name", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Victim Age Group Analysis
+age_group_summary <- crime_data_nov_dec %>%
+  group_by(age_group) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Victim age group distribution:\n")
+print(age_group_summary)
+
+ggplot(age_group_summary, aes(x = age_group, y = Count, fill = age_group)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Victim Age Group Distribution (Nov & Dec)", x = "Age Group", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Time Period
+time_period_summary <- crime_data_nov_dec %>%
+  group_by(time_period) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by time period:\n")
+print(time_period_summary)
+
+ggplot(time_period_summary, aes(x = time_period, y = Count, fill = time_period)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Time Period (Nov & Dec)", x = "Time Period", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Crime Distribution by Day of the Week
+day_of_week_summary <- crime_data_nov_dec %>%
+  group_by(day_of_week) %>%
+  summarise(Count = n()) %>%
+  arrange(desc(Count))
+
+cat("Crimes by day of the week:\n")
+print(day_of_week_summary)
+
+ggplot(day_of_week_summary, aes(x = reorder(day_of_week, -Count), y = Count, fill = day_of_week)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Crimes by Day of the Week (Nov & Dec)", x = "Day of Week", y = "Count") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+# Logistic Regression Analysis
+# We'll use a binary classification approach for crime type
+
+library(caret)
+library(glmnet)
+
+# Convert some categorical variables to factors
+crime_data_clean$Vict.Sex <- as.factor(crime_data_clean$Vict.Sex)
+crime_data_clean$Vict.Descent <- as.factor(crime_data_clean$Vict.Descent)
+
+# Create a binary target variable (e.g., violent crime vs. non-violent crime)
+crime_data_clean$is_violent_crime <- ifelse(
+  grepl("ASSAULT|HOMICIDE|RAPE|ROBBERY", crime_data_clean$Crm.Cd.Desc, ignore.case = TRUE), 
+  1, 0
+)
+
+# Select features for the model
+model_features <- c(
+  "Vict.Age", 
+  "Vict.Sex", 
+  "Vict.Descent", 
+  "hour", 
+  "day_of_week", 
+  "has_weapon", 
+  "time_to_report"
+)
+
+# Prepare the dataset
+logistic_data <- crime_data_clean[, c(model_features, "is_violent_crime")]
+
+# Handle missing values
+logistic_data <- na.omit(logistic_data)
+
+# One-hot encode categorical variables
+logistic_data_encoded <- model.matrix(~ . - 1, data = logistic_data)
+
+# Split the data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(logistic_data$is_violent_crime, p = 0.7, list = FALSE)
+X_train <- logistic_data_encoded[train_index, -ncol(logistic_data_encoded)]
+y_train <- logistic_data$is_violent_crime[train_index]
+X_test <- logistic_data_encoded[-train_index, -ncol(logistic_data_encoded)]
+y_test <- logistic_data$is_violent_crime[-train_index]
+
+# Fit logistic regression with regularization (Lasso)
+cv_model <- cv.glmnet(X_train, y_train, alpha = 1, family = "binomial")
+
+# Best lambda
+best_lambda <- cv_model$lambda.min
+
+# Final model
+final_model <- glmnet(X_train, y_train, alpha = 1, lambda = best_lambda, family = "binomial")
+
+# Make predictions
+predictions <- predict(final_model, newx = X_test, type = "response")
+predicted_classes <- ifelse(predictions > 0.5, 1, 0)
+```
+
+```{r}
+# Model Evaluation
+confusion_matrix <- table(Actual = y_test, Predicted = predicted_classes)
+print("Confusion Matrix:")
+print(confusion_matrix)
+
+# Calculate performance metrics
+accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+precision <- confusion_matrix[2,2] / sum(confusion_matrix[,2])
+recall <- confusion_matrix[2,2] / sum(confusion_matrix[2,])
+f1_score <- 2 * (precision * recall) / (precision + recall)
+
+# Print performance metrics
+cat("\nModel Performance Metrics:\n")
+cat("Accuracy:", round(accuracy, 4), "\n")
+cat("Precision:", round(precision, 4), "\n")
+cat("Recall:", round(recall, 4), "\n")
+cat("F1 Score:", round(f1_score, 4), "\n")
+```
+
+```{r}
+# Examine the most important features
+feature_importance <- coef(final_model)
+important_features <- as.matrix(feature_importance)
+colnames(important_features) <- "Coefficient"
+print("Top 10 Most Important Features:")
+
+print(head(sort(abs(important_features), decreasing = TRUE), 10))
+```
+```{r}
+# Extract coefficients
+coef_matrix <- coef(final_model)
+
+# Create a dataframe of feature importances
+feature_importance <- data.frame(
+  Feature = rownames(coef_matrix)[-1],  # Exclude intercept
+  Importance = abs(coef_matrix[-1, 1])  # Use absolute values
+)
+
+# Sort features by importance
+feature_importance <- feature_importance[order(-feature_importance$Importance), ]
+
+# Select top 5 features
+top_5_features <- head(feature_importance, 5)
+
+# Print top 5 features
+cat("Top 5 Most Important Features:\n")
+print(top_5_features)
+
+# Optional: Visualize feature importance
+library(ggplot2)
+ggplot(top_5_features, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 5 Most Important Features for Crime Prediction",
+    x = "Features",
+    y = "Absolute Coefficient Value"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Optional: ROC Curve
+library(pROC)
+roc_curve <- roc(y_test, as.numeric(predictions))
+plot(roc_curve, main="ROC Curve for LA Crime Prediction")
+auc_value <- auc(roc_curve)
+cat("\nArea Under the Curve (AUC):", round(auc_value, 4), "\n")
+```
+
+```{r}
+# Visualization of Model Accuracy
+library(ggplot2)
+
+# Create a data frame for model performance metrics
+model_metrics <- data.frame(
+  Metric = c("Accuracy", "Precision", "Recall", "F1 Score"),
+  Value = c(0.887, 0.876, 0.626, 0.73)
+)
+
+# Plot the metrics
+ggplot(model_metrics, aes(x = Metric, y = Value, fill = Metric)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = round(Value, 3)), vjust = -0.5, size = 4) +
+  labs(
+    title = "Model Performance Metrics",
+    x = "Metric",
+    y = "Value"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  ylim(0, 1)
+
+
+# Confusion matrix
+confusion_matrix <- table(Actual = y_test, Predicted = predicted_classes)
+
+# Convert to data frame for visualization
+conf_matrix_df <- as.data.frame(as.table(confusion_matrix))
+
+# Plot heatmap
+ggplot(conf_matrix_df, aes(x = Predicted, y = Actual, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), vjust = 1) +
+  scale_fill_gradient(low = "lightblue", high = "steelblue") +
+  labs(
+    title = "Confusion Matrix Heatmap",
+    x = "Predicted Class",
+    y = "Actual Class",
+    fill = "Frequency"
+  ) +
+  theme_minimal()
+
+# Plot feature importance
+ggplot(top_5_features, aes(x = Importance, y = reorder(Feature, Importance))) +
+  geom_bar(stat = "identity", fill = "lightcoral") +
+  labs(
+    title = "Top 5 Features by Importance",
+    x = "Importance (Absolute Coefficient)",
+    y = "Features"
+  ) +
+  theme_minimal()
+```
