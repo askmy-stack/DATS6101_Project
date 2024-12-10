@@ -433,3 +433,56 @@ auc_value <- auc(roc_curve)
 cat("\nArea Under the Curve (AUC):", round(auc_value, 4), "\n")
 ```
 
+```{r}
+# Visualization of Model Accuracy
+library(ggplot2)
+
+# Create a data frame for model performance metrics
+model_metrics <- data.frame(
+  Metric = c("Accuracy", "Precision", "Recall", "F1 Score"),
+  Value = c(0.887, 0.876, 0.626, 0.73)
+)
+
+# Plot the metrics
+ggplot(model_metrics, aes(x = Metric, y = Value, fill = Metric)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = round(Value, 3)), vjust = -0.5, size = 4) +
+  labs(
+    title = "Model Performance Metrics",
+    x = "Metric",
+    y = "Value"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal() +
+  ylim(0, 1)
+
+
+# Confusion matrix
+confusion_matrix <- table(Actual = y_test, Predicted = predicted_classes)
+
+# Convert to data frame for visualization
+conf_matrix_df <- as.data.frame(as.table(confusion_matrix))
+
+# Plot heatmap
+ggplot(conf_matrix_df, aes(x = Predicted, y = Actual, fill = Freq)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = Freq), vjust = 1) +
+  scale_fill_gradient(low = "lightblue", high = "steelblue") +
+  labs(
+    title = "Confusion Matrix Heatmap",
+    x = "Predicted Class",
+    y = "Actual Class",
+    fill = "Frequency"
+  ) +
+  theme_minimal()
+
+# Plot feature importance
+ggplot(top_5_features, aes(x = Importance, y = reorder(Feature, Importance))) +
+  geom_bar(stat = "identity", fill = "lightcoral") +
+  labs(
+    title = "Top 5 Features by Importance",
+    x = "Importance (Absolute Coefficient)",
+    y = "Features"
+  ) +
+  theme_minimal()
+```
