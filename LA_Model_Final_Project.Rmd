@@ -934,6 +934,47 @@ for (area in top_areas) {
 
 ```
 
+```{r}
+  plot(model, forecast) +
+    ggtitle(paste("Monthly Crime Forecast for", area)) +
+    theme_minimal()
+```
+Using Prophet, we forecasted monthly crime trends for top crime areas like Pacific.
+ 
+The graph shows a clear upward trend in crime counts from 2020 to 2024, with projections exceeding 1200 incidents per month by late 2024.
+
+The shaded area highlights the model’s confidence interval, accounting for potential variability in predictions.
+
+
+```{r}
+# Extract and Summarize Victim Data for Top Areas
+victim_demo <- la_crime %>%
+  filter(Area_Name %in% top_areas) %>%
+  group_by(Area_Name, Victim_Sex, Victim_Descent) %>%
+  summarise(Crime_Count = n(), .groups = "drop") %>%
+  arrange(Area_Name, desc(Crime_Count))
+
+# View Victim Demographic Summary
+print(victim_demo)
+
+# Plot Victim Sex Distribution for Top 10 Areas
+ggplot(victim_demo, aes(x = Victim_Sex, y = Crime_Count, fill = Victim_Sex)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Area_Name, scales = "free_y") +
+  labs(title = "Crime Distribution by Victim Sex in Top 3 Areas",
+       x = "Victim Sex", y = "Crime Count") +
+  theme_minimal()
+
+# Plot Victim Descent (Race) Distribution for Top 3 Areas
+ggplot(victim_demo, aes(x = Victim_Descent, y = Crime_Count, fill = Victim_Descent)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Area_Name, scales = "free_y") +
+  labs(title = "Crime Distribution by Victim Descent in Top 3 Areas",
+       x = "Victim Descent", y = "Crime Count") +
+  theme_minimal()
+
+```
+
 
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
