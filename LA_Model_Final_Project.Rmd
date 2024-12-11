@@ -975,7 +975,186 @@ ggplot(victim_demo, aes(x = Victim_Descent, y = Crime_Count, fill = Victim_Desce
 
 ```
 
+```{r}
+# Forecast Monthly Trends for Each Top Crime Area
+if (!require(prophet)) install.packages("prophet")
+library(prophet)
+library(Metrics) # For RMSE, R-Squared
 
+# Initialize empty list to store metrics
+area_metrics <- data.frame(Area_Name = character(),
+                           RMSE = numeric(),
+                           R2 = numeric(),
+                           stringsAsFactors = FALSE)
+
+for (area in top_areas) {
+  
+  cat("\nForecasting Crime Trends for Area:", area, "\n")
+  
+  # Prepare Data for Prophet
+  area_data <- crime_top_10 %>%
+    filter(Area_Name == area) %>%
+    select(ds = Month, y = Crime_Count)
+  
+  # Train Prophet Model
+  model <- prophet(area_data)
+  
+  # Create Future Dataframe for Next 12 Months
+  future <- make_future_dataframe(model, periods = 12, freq = "month")
+  
+  # Predict Future Crime Trends
+  forecast <- predict(model, future)
+  
+  # Plot Forecast
+  plot(model, forecast) +
+    ggtitle(paste("Monthly Crime Forecast for", area)) +
+    theme_minimal()
+  
+  # Evaluate Metrics
+  actuals <- area_data$y
+  predictions <- forecast$yhat[1:length(actuals)]  # Match forecast to actual data length
+  
+  rmse_value <- rmse(actuals, predictions)
+  r2_value <- cor(actuals, predictions)^2
+  
+  # Append to metrics summary
+  area_metrics <- rbind(area_metrics, data.frame(
+    Area_Name = area,
+    RMSE = rmse_value,
+    R2 = r2_value
+  ))
+}
+
+# Print Summary Metrics
+print("Model Performance Metrics for Each Top Area:")
+print(area_metrics)
+
+```
+
+
+
+
+`
+```{r}
+# Load Required Libraries
+library(dplyr)
+library(caret)
+library(xgboost)
+
+# Prepare Data for Top 5 Victim Descents
+top_5_descents <- la_crime %>%
+  filter(Victim_Descent %in% c("H", "W", "B", "X", "O"))
+
+# Add Time-Based Features
+top_5_descents <- top_5_descents %>%
+  mutate(
+    Month = as.numeric(format(as.Date(Date_Occurred, format = "%m/%d/%Y"), "%Y%m")),
+    Quarter = as.numeric(format(as.Date(Date_Occurred, format = "%m/%d/%Y"), "%m")) %/% 4 + 1,
+    Day_of_Week = as.numeric(weekdays(as.Date(Date_Occurred, format = "%m/%d/%Y")))
+  )
+
+# Aggregate Data
+victim_data <- top_5_descents %>%
+  group_by(Month, Area_Name, Victim_Descent, Quarter, Day_of_Week) %>%
+  summarise(Crime_Count = n(), .groups = "drop")
+
+# Encode Area_Name and Victim_Descent
+victim_data$Area_Name <- as.numeric(as.factor(victim_data$Area_Name))
+victim_data$Victim_Descent <- as.numeric(factor(victim_data$Victim_Descent, levels = c("H", "W", "B", "X", "O"))) - 1
+
+# Split Data into Train and Test Sets
+set.seed(123)
+train_index <- createDataPartition(victim_data$Victim_Descent, p = 0.8, list = FALSE)
+train_data <- victim_data[train_index, ]
+test_data <- victim_data[-train_index, ]
+
+# Features and Target
+x_train <- as.matrix(train_data[, c("Month", "Area_Name", "Crime_Count", "Quarter", "Day_of_Week")])
+x_test <- as.matrix(test_data[, c("Month", "Area_Name", "Crime_Count", "Quarter", "Day_of_Week")])
+y_train <- train_data$Victim_Descent
+y_test <- test_data$Victim_Descent
+
+# Class Weights for Imbalance
+class_weights <- table(y_train)
+class_weights <- sum(class_weights) / (length(class_weights) * class_weights)
+
+# Convert to XGBoost DMatrix
+dtrain <- xgb.DMatrix(data = x_train, label = y_train, weight = class_weights[y_train + 1])
+dtest <- xgb.DMatrix(data = x_test, label = y_test)
+
+# Hyperparameter Tuning with Grid Search
+param_grid <- expand.grid(
+  max_depth = c(6, 8, 10),
+  eta = c(0.05, 0.1),
+  subsample = c(0.8, 1),
+  colsample_bytree = c(0.8, 1),
+  lambda = c(1, 2),
+  alpha = c(0.5, 1)
+)
+
+best_accuracy <- 0
+best_params <- NULL
+
+for (i in 1:nrow(param_grid)) {
+  params <- list(
+    objective = "multi:softmax",
+    num_class = 5,
+    eval_metric = "mlogloss",
+    max_depth = param_grid$max_depth[i],
+    eta = param_grid$eta[i],
+    subsample = param_grid$subsample[i],
+    colsample_bytree = param_grid$colsample_bytree[i],
+    lambda = param_grid$lambda[i],
+    alpha = param_grid$alpha[i]
+  )
+  
+  # Train Model
+  xgb_model <- xgb.train(params = params, data = dtrain, nrounds = 200, verbose = 0)
+  
+  # Predict and Evaluate
+  y_pred <- predict(xgb_model, dtest)
+  accuracy <- mean(y_pred == y_test)
+  
+  if (accuracy > best_accuracy) {
+    best_accuracy <- accuracy
+    best_params <- params
+  }
+}
+
+# Train Final Model with Best Parameters
+final_model <- xgb.train(params = best_params, data = dtrain, nrounds = 200, verbose = 1)
+
+# Predict and Evaluate
+y_pred <- predict(final_model, dtest)
+descents <- c("H", "W", "B", "X", "O")
+y_pred_labels <- descents[y_pred + 1]
+y_test_labels <- descents[y_test + 1]
+
+# Confusion Matrix
+conf_matrix <- confusionMatrix(factor(y_pred_labels), factor(y_test_labels))
+print("Confusion Matrix:")
+print(conf_matrix)
+
+# Print Overall Accuracy
+accuracy <- conf_matrix$overall['Accuracy']
+cat("Overall Accuracy:", round(accuracy, 3), "\n")
+# Feature Importance
+importance_matrix <- xgb.importance(feature_names = colnames(x_train), model = final_model)
+
+# Print Feature Importance Table
+print("Feature Importance Table:")
+print(importance_matrix)
+
+# Plot Feature Importance
+library(ggplot2)
+ggplot(importance_matrix, aes(x = reorder(Feature, Gain), y = Gain)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  coord_flip() +
+  labs(title = "Feature Importance (XGBoost)", x = "Features", y = "Importance (Gain)") +
+  theme_minimal()
+
+
+```
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
 ```{r 3.1, echo=T, results='markup'}
