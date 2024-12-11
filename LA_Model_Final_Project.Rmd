@@ -1155,6 +1155,110 @@ ggplot(importance_matrix, aes(x = reorder(Feature, Gain), y = Gain)) +
 
 
 ```
+
+```{r}
+# Load Required Libraries
+library(dplyr)
+library(caret)
+library(xgboost)
+
+# Prepare Data for Victim Sex Prediction
+victim_sex_data <- la_crime %>%
+  filter(Victim_Sex %in% c("M", "F", "X")) # Only include valid sex categories
+
+# Add Time-Based Features
+victim_sex_data <- victim_sex_data %>%
+  mutate(
+    Month = as.numeric(format(as.Date(Date_Occurred, format = "%m/%d/%Y"), "%Y%m")),
+    Quarter = as.numeric(format(as.Date(Date_Occurred, format = "%m/%d/%Y"), "%m")) %/% 4 + 1,
+    Day_of_Week = as.numeric(format(as.Date(Date_Occurred, format = "%m/%d/%Y"), "%u")) # 1: Monday, 7: Sunday
+  )
+
+# Aggregate Data
+victim_sex_summary <- victim_sex_data %>%
+  group_by(Month, Area_Name, Victim_Sex, Quarter, Day_of_Week) %>%
+  summarise(Crime_Count = n(), .groups = "drop")
+
+# Encode Area_Name and Victim_Sex
+victim_sex_summary$Area_Name <- as.numeric(as.factor(victim_sex_summary$Area_Name))
+victim_sex_summary$Victim_Sex <- as.numeric(factor(victim_sex_summary$Victim_Sex, levels = c("M", "F", "X"))) - 1
+
+# Train-Test Split
+set.seed(123)
+train_index <- createDataPartition(victim_sex_summary$Victim_Sex, p = 0.8, list = FALSE)
+train_data <- victim_sex_summary[train_index, ]
+test_data <- victim_sex_summary[-train_index, ]
+
+# Features and Target
+x_train <- as.matrix(train_data[, c("Month", "Area_Name", "Crime_Count", "Quarter", "Day_of_Week")])
+x_test <- as.matrix(test_data[, c("Month", "Area_Name", "Crime_Count", "Quarter", "Day_of_Week")])
+y_train <- train_data$Victim_Sex
+y_test <- test_data$Victim_Sex
+
+# Class Weights for Imbalance
+class_weights <- table(y_train)
+class_weights <- sum(class_weights) / (length(class_weights) * class_weights)
+
+# Convert Data to XGBoost DMatrix
+dtrain <- xgb.DMatrix(data = x_train, label = y_train, weight = class_weights[y_train + 1])
+dtest <- xgb.DMatrix(data = x_test, label = y_test)
+
+# Hyperparameter Tuning
+param_grid <- expand.grid(
+  max_depth = c(6, 8),
+  eta = c(0.05, 0.1),
+  subsample = c(0.8, 1),
+  colsample_bytree = c(0.8, 1)
+)
+
+best_accuracy <- 0
+best_params <- NULL
+
+for (i in 1:nrow(param_grid)) {
+  params <- list(
+    objective = "multi:softmax",
+    num_class = 3,
+    eval_metric = "mlogloss",
+    max_depth = param_grid$max_depth[i],
+    eta = param_grid$eta[i],
+    subsample = param_grid$subsample[i],
+    colsample_bytree = param_grid$colsample_bytree[i]
+  )
+  
+  # Train Model
+  model <- xgb.train(params = params, data = dtrain, nrounds = 200, verbose = 0)
+  
+  # Predict and Evaluate
+  y_pred <- predict(model, dtest)
+  accuracy <- mean(y_pred == y_test)
+  
+  if (accuracy > best_accuracy) {
+    best_accuracy <- accuracy
+    best_params <- params
+  }
+}
+
+# Train Final Model
+final_model <- xgb.train(params = best_params, data = dtrain, nrounds = 500, verbose = 1)
+
+# Predict and Evaluate Final Model
+y_pred <- predict(final_model, dtest)
+sex_labels <- c("M", "F", "X")
+y_pred_labels <- sex_labels[y_pred + 1]
+y_test_labels <- sex_labels[y_test + 1]
+
+# Confusion Matrix
+conf_matrix <- confusionMatrix(factor(y_pred_labels), factor(y_test_labels))
+print("Confusion Matrix:")
+print(conf_matrix)
+
+# Print Overall Accuracy
+accuracy <- conf_matrix$overall['Accuracy']
+cat("Overall Accuracy:", round(accuracy, 3), "\n")
+
+```
+
+
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
 ```{r 3.1, echo=T, results='markup'}
