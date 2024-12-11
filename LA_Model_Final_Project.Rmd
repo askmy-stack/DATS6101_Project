@@ -885,6 +885,55 @@ Monthly Crime Trends in 77th Street: Crime incidents in the 77th Street area sho
 
 Stabilization Observed: After reaching a low of 1064 crimes in April 2020, the crime counts began to stabilize around 1076–1098 crimes in the following months.
 
+```{r}
+# Find the Top 3 Areas with the Highest Total Crime
+top_areas <- la_crime_filtered %>%
+  group_by(Area_Name) %>%
+  summarise(Total_Crime = sum(Crime_Count)) %>%
+  arrange(desc(Total_Crime)) %>%
+  top_n(3, Total_Crime) %>%
+  pull(Area_Name)
+
+# Filter Data for Top 3 Areas
+crime_top_10 <- la_crime_filtered %>%
+  filter(Area_Name %in% top_areas)
+
+# Print Top 3 Areas
+print(top_areas)
+
+```
+
+
+
+```{r}
+# Load Prophet Library
+if (!require(prophet)) install.packages("prophet")
+library(prophet)
+
+# Forecast Monthly Trends for Each Top Crime Area
+for (area in top_areas) {
+  
+  
+  # Prepare Data for Prophet
+  area_data <- crime_top_10 %>%
+    filter(Area_Name == area) %>%
+    select(ds = Month, y = Crime_Count)
+  
+  # Train Prophet Model
+  model <- prophet(area_data)
+  
+  # Create Future Dataframe for Next 12 Months
+  future <- make_future_dataframe(model, periods = 12, freq = "month")
+  
+  # Predict Future Crime Trends
+  forecast <- predict(model, future)
+  
+  # Plot Forecast
+
+}
+
+```
+
 
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
