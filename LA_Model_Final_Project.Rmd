@@ -858,6 +858,34 @@ ggplot(crime_yearly, aes(x=Year, y=Total_Crime)) +
   theme_minimal()
 
 ```
+
+
+Crime Trends (2020-2023): Total crime in Los Angeles steadily increased from 2020 to 2022, reaching a peak of over 230,000 incidents in 2022.
+
+Slight Decline: In 2023, crime numbers saw a slight drop compared to 2022.
+
+Visualization Insight: The line chart highlights a significant upward trend from 2020 to 2022, followed by a minor decrease in 2023.
+
+
+
+```{r}
+# Extract Month and Aggregate Monthly Crime Data
+la_crime_filtered <- la_crime_filtered %>%
+  mutate(Month = as.Date(cut(as.Date(Date_Occurred, format="%m/%d/%Y"), breaks = "month"))) %>%
+  group_by(Area_Name, Month) %>%
+  summarise(Crime_Count = n()) %>%
+  ungroup()
+
+# View Monthly Aggregated Data
+head(la_crime_filtered)
+
+```
+
+Monthly Crime Trends in 77th Street: Crime incidents in the 77th Street area showed a declining trend from January 2020 (1305 crimes) to March 2020 (1012 crimes).
+
+Stabilization Observed: After reaching a low of 1064 crimes in April 2020, the crime counts began to stabilize around 1076–1098 crimes in the following months.
+
+
 ## SMART Question 3: - How effectively can crime prediction models utilize factors like victim descent, spatial data, and temporal patterns the likelihood and type of criminal incidents in different areas of Los Angeles?
 
 ```{r 3.1, echo=T, results='markup'}
