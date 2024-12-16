@@ -625,7 +625,8 @@ lines(test_data, col = 'red')
 accuracy(forecast_train, test_data)
 
 ```
-1) Indications of overfitting, where the model works decently on the training set but fails to generalize well to unseen data (the test set)
+Interpretation:
+The small MAPE and ACF1 values indicate that, overall, the model has some predictive power and has removed most of the correlation in the residuals.
 
 
 
