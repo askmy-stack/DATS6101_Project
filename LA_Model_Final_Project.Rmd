@@ -626,7 +626,8 @@ accuracy(forecast_train, test_data)
 
 ```
 Interpretation:
-The small MAPE and ACF1 values indicate that, overall, the model has some predictive power and has removed most of the correlation in the residuals.
+ACF1 measures the correlation between consecutive residuals. In the training set, the residuals have a moderate positive autocorrelation (0.307), suggesting some structure or pattern remains in the model's errors
+
 
 
 
